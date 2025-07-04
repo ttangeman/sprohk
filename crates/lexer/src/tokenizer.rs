@@ -16,10 +16,8 @@ pub struct Token {
     loc: SourceLocation,
 }
 
+// Tokenizes an arbitrary string into a sequence of tokens.
 pub struct Tokenizer<'a> {
-    // Store the input buffer as bytes for efficient parsing.
-    // This allows us to handle both ASCII and UTF-8 characters
-    // without needing to convert to a string for each token.
     buf: &'a [u8],
     pos: usize,
 }
@@ -49,11 +47,52 @@ impl<'a> Tokenizer<'a> {
 
     fn parse_number_literal(&mut self) -> Token {
         let start = self.pos;
-        while let Some(&byte) = self.buf.get(self.pos) {
-            if byte.is_ascii_digit() {
-                self.pos += 1;
-            } else {
-                break;
+
+        'outer: while let Some(&byte) = self.buf.get(self.pos) {
+            match byte {
+                b'0'..=b'9' => {
+                    self.pos += 1;
+                }
+                // Handle decimal point
+                b'.' => {
+                    self.pos += 1;
+                    while let Some(&byte) = self.buf.get(self.pos) {
+                        match byte {
+                            b'0'..=b'9' => {
+                                self.pos += 1;
+                            }
+                            b'e' | b'E' => continue 'outer,
+                            b'.' => {
+                                self.pos += 1;
+                                // If we encounter another decimal point, it's invalid
+                                return Token {
+                                    kind: TokenKind::Invalid,
+                                    loc: SourceLocation::new(start, self.pos - start),
+                                };
+                            }
+                            _ => break 'outer,
+                        }
+                    }
+                }
+                // Handle scientific notation
+                b'e' | b'E' => {
+                    self.pos += 1;
+
+                    if let Some(&byte) = self.buf.get(self.pos) {
+                        if byte == b'-' || byte == b'+' {
+                            self.pos += 1; // Skip the sign
+                        }
+                    }
+                    while let Some(&byte) = self.buf.get(self.pos) {
+                        match byte {
+                            b'0'..=b'9' => {
+                                self.pos += 1;
+                            }
+                            _ => break 'outer,
+                        }
+                    }
+                }
+                _ => break 'outer,
             }
         }
 
@@ -92,26 +131,41 @@ impl<'a> Tokenizer<'a> {
         let start: usize = self.pos;
         self.pos += 1; // Skip the opening quote
 
-        // Character literal length checks get resolved later, so
-        // we simply read until we find the escaping quote.
-        while let Some(&byte) = self.buf.get(self.pos) {
-            match byte {
-                b'\'' => {
-                    self.pos += 1; // Skip the closing quote
-                    return Token {
-                        kind: TokenKind::CharLiteral,
-                        loc: SourceLocation::new(start, self.pos - start),
-                    };
-                }
-                _ => {
-                    self.pos += 1;
+        match self.buf.get(self.pos) {
+            Some(b'\'') => {
+                self.pos += 1; // Skip the closing quote
+                return Token {
+                    kind: TokenKind::CharLiteral,
+                    loc: SourceLocation::new(start, self.pos - start),
+                };
+            }
+            Some(_) => {
+                self.pos += 1;
+                match self.buf.get(self.pos) {
+                    Some(b'\'') => {
+                        self.pos += 1; // Skip the closing quote
+                        return Token {
+                            kind: TokenKind::CharLiteral,
+                            loc: SourceLocation::new(start, self.pos - start),
+                        };
+                    }
+                    _ => {
+                        // If we reach here, it means we didn't find a valid character literal
+                        return Token {
+                            kind: TokenKind::Invalid,
+                            loc: SourceLocation::new(start, self.pos - start),
+                        };
+                    }
                 }
             }
-        }
-
-        Token {
-            kind: TokenKind::Invalid,
-            loc: SourceLocation::new(start, self.pos - start),
+            None => {
+                // If we reach the end of the buffer without finding a closing quote
+                // treat it as an invalid character literal.
+                return Token {
+                    kind: TokenKind::Invalid,
+                    loc: SourceLocation::new(start, self.pos - start),
+                };
+            }
         }
     }
 
@@ -130,10 +184,11 @@ impl<'a> Tokenizer<'a> {
                 b'\'' => {
                     return Some(self.parse_char_literal());
                 }
-                b'+' | b'-' | b'*' | b'/' | b'=' | b'!' | b'<' | b'>' | b'&' | b'|' => {
+                b'+' | b'-' | b'*' | b'/' | b'=' | b'!' | b'<' | b'>' | b'&' | b'|' | b'.' => {
                     let start = self.pos;
                     self.pos += 1;
 
+                    // TODO: Convert to specific token kind based on the symbol.
                     return Some(Token {
                         kind: TokenKind::Symbol,
                         loc: SourceLocation::new(start, 1),
