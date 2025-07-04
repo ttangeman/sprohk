@@ -3,6 +3,7 @@ name = "sprohk"
 version = "0.1.0"
 rust-version.workspace = true
 edition.workspace = true
+default-run = "sprohk"
 
 [lints]
 workspace = true
@@ -10,3 +11,7 @@ workspace = true
 [dependencies]
 clap.workspace = true
 sprohk_lexer = { path = "../lexer" }
+
+[[bin]]
+name = "sprohk"
+path = "src/main.rs"

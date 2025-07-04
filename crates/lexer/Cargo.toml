@@ -9,3 +9,7 @@ workspace = true
 
 [dependencies]
 sprohk_core = { path = "../core" }
+
+[[bin]]
+name = "lexer_snapshots"
+path = "src/bin/gen_snapshots.rs"

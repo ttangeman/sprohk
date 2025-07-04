@@ -65,31 +65,3 @@ fn main() {
         ExitCode::Error => 1,
     });
 }
-
-#[cfg(test)]
-mod tests {
-    use std::env;
-    use super::*;
-
-    // TODO: See if there is an easier way than changing the current directory
-    fn change_dir_to_test() {
-        let crate_dir = env!("CARGO_MANIFEST_DIR");
-        let test_dir = format!("{}/tests", crate_dir);
-
-        println!("Changing directory to: {}", test_dir);
-
-        env::set_current_dir(&test_dir).expect("Failed to change directory to test directory");
-    }
-
-    #[test]
-    fn text_example_00() {
-        change_dir_to_test();
-
-        let exit_code = run("00_idents-and-lits.spk");
-        assert_eq!(
-            exit_code,
-            ExitCode::Success,
-            "Expected success for test 00_idents-and-lits.spk"
-        );
-    }
-}
