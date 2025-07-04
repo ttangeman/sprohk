@@ -3,7 +3,7 @@ pub struct SourceLocation {
     pub line: usize,
     pub start: usize,
     pub end: usize,
-} 
+}
 
 impl SourceLocation {
     pub fn new(start: usize, length: usize) -> Self {

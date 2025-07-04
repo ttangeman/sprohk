@@ -26,8 +26,6 @@ fn run(source_file: &str) -> ExitCode {
             let mut tokenizer = Tokenizer::new(&source);
             let mut tokens = Vec::new();
 
-            println!("{:?}", tokenizer.next());
-
             while let Some(token) = tokenizer.next() {
                 tokens.push(token);
             }
