@@ -7,7 +7,7 @@ members = [
     "crates/sprohk",
 ]
 resolver = "3"
-default-members = ["crates/sprohk"]
+#default-members = ["crates/sprohk"]
 
 [workspace.package]
 rust-version = "1.86"
@@ -15,6 +15,7 @@ edition = "2024"
 
 [workspace.dependencies]
 clap = { version = "4.5", features = ["derive"] }
+phf = { version = "0.12.1", features = ["default", "macros"] }
 
 [workspace.lints.rust]
 dead_code = "allow"

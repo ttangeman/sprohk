@@ -25,9 +25,9 @@ fn main() {
             // Place the golden file in a "snapshots" subdirectory next to the .spk file
             let golden_dir = path.parent().unwrap().join("snapshots");
             _ = fs::create_dir_all(&golden_dir);
-            let golden_path = golden_dir.join(
-                path.file_name().unwrap()
-            ).with_extension("golden");
+            let golden_path = golden_dir
+                .join(path.file_name().unwrap())
+                .with_extension("golden");
 
             fs::write(&golden_path, tokens.join("\n"))
                 .expect(&format!("Failed to write {}", golden_path.display()));

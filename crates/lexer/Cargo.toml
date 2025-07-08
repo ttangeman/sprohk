@@ -8,6 +8,7 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
+phf.workspace = true
 sprohk_core = { path = "../core" }
 
 [[bin]]

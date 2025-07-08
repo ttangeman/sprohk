@@ -1,0 +1,14 @@
+// Compile-time restricted
+const int: i32 = 42;
+
+fn foo() -> ?i32 {
+    // Constant
+    let a: bool = true;
+    // Variable
+    var b = false;
+    if a and b {
+        return int;
+    } else if a or b {
+        return null;
+    }
+}

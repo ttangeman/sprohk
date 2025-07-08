@@ -1,5 +1,6 @@
-i = 123
-f = 1.0e+10
-s = "foo"
-c = 'x'
-e = ''
+const i: i32 = 123
+const f: f32 = 1.0e+10
+const s: str = "foo"
+const es: str = ""
+const c: char = 'x'
+const ec: char = ''
