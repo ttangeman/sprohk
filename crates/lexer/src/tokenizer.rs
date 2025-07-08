@@ -1,38 +1,108 @@
-use phf::phf_set;
+use phf::phf_map;
 use sprohk_core::SourceLocation;
 
-// List of keywords for the tokenizer.
-// Uses a compile time hash set for fast lookup.
-const KEYWORDS: phf::Set<&'static [u8]> = phf_set! {
-    b"const", b"let", b"var", // decltypes
-    b"fn", b"return", // function related keywords
-    b"if", b"else", // control flow keywords
-    b"and", b"or", // logical operators
-    b"null", b"true", b"false", // literal keywords
-    b"i8", b"i16", b"i32", b"i64", // signed integer types
-    b"u8", b"u16", b"u32", b"u64", // unsigned integer types
-    b"f32", b"f64", // float types
-    b"str", b"char", // string and character types
+/// List of keywords for the tokenizer.
+/// Uses a compile time perfect hash table for fast lookup.
+pub const KEYWORDS: phf::Map<&'static [u8], TokenKind> = phf_map! {
+    b"const" => TokenKind::Const,
+    b"let" => TokenKind::Let,
+    b"var" => TokenKind::Var,
+    b"fn" => TokenKind::Fn,
+    b"return" => TokenKind::Return,
+    b"if" => TokenKind::If,
+    b"else" => TokenKind::Else,
+    b"and" => TokenKind::LogicalAnd,
+    b"or" => TokenKind::LogicalOr,
+    b"null" => TokenKind::Null,
+    b"true" => TokenKind::True,
+    b"false" => TokenKind::False,
+    b"i8" => TokenKind::I8,
+    b"i16" => TokenKind::I16,
+    b"i32" => TokenKind::I32,
+    b"i64" => TokenKind::I64,
+    b"u8" => TokenKind::U8,
+    b"u16" => TokenKind::U16,
+    b"u32" => TokenKind::U32,
+    b"u64" => TokenKind::U64,
+    b"f32" => TokenKind::F32,
+    b"f64" => TokenKind::F64,
+    b"str" => TokenKind::Str,
+    b"char" => TokenKind::Char,
 };
 
-#[derive(Debug)]
-enum TokenKind {
+/// Represents the kind of token that can be produced by the tokenizer.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TokenKind {
     Invalid,
     Identifier,
     NumberLiteral,
     StringLiteral,
     CharLiteral,
-    Symbol,
-    Keyword,
+
+    // Symbols and operators
+    LBrace,     // {
+    RBrace,     // }
+    LParen,     // (
+    RParen,     // )
+    LBracket,   // [
+    RBracket,   // ]
+    Semicolon,  // ;
+    Comma,      // ,
+    Not,        // !
+    Less,       // <
+    Greater,    // >
+    BitwiseAnd, // &
+    BitwiseOr,  // |
+    Dot,        // .
+    Colon,      // :
+    Question,   // ?
+    Plus,       // +
+    PlusEq,     // +=
+    Star,       // *
+    StarEq,     // *=
+    Eq,         // =
+    EqEq,       // ==
+    Minus,      // -
+    MinusEq,    // -=
+    Arrow,      // ->
+    Slash,      // /
+    SlashEq,    // /=
+
+    // Reserved keywords
+    Const,
+    Let,
+    Var,
+    Fn,
+    Return,
+    If,
+    Else,
+    LogicalAnd,
+    LogicalOr,
+    Null,
+    True,
+    False,
+    I8,
+    I16,
+    I32,
+    I64,
+    U8,
+    U16,
+    U32,
+    U64,
+    F32,
+    F64,
+    Str,
+    Char,
 }
 
+/// Represents a token with its kind and source location.
 #[derive(Debug)]
 pub struct Token {
     kind: TokenKind,
     loc: SourceLocation,
 }
 
-// Tokenizes an arbitrary string into a sequence of tokens.
+/// Tokenizes an arbitrary string into a sequence of tokens.
 pub struct Tokenizer<'a> {
     buf: &'a [u8],
     pos: usize,
@@ -58,9 +128,9 @@ impl<'a> Tokenizer<'a> {
 
         // Check if the character sequence is a keyword, otherwise return an identifier token.
         let identifier = &self.buf[start..self.pos];
-        if KEYWORDS.contains(identifier) {
+        if let Some(keyword) = KEYWORDS.get(identifier) {
             Token {
-                kind: TokenKind::Keyword,
+                kind: *keyword,
                 loc: SourceLocation::new(start, self.pos - start),
             }
         } else {
@@ -210,63 +280,202 @@ impl<'a> Tokenizer<'a> {
                 b'\'' => {
                     return Some(self.parse_char_literal());
                 }
-                b'{' | b'}' | b'(' | b')' | b'[' | b']' | b';' | b',' | b'!' | b'<' | b'>'
-                | b'&' | b'|' | b'.' | b':' | b'?' => {
+                b'{' => {
                     let start = self.pos;
                     self.pos += 1;
-
-                    // TODO: Convert to specific token kind based on the symbol?
                     return Some(Token {
-                        kind: TokenKind::Symbol,
+                        kind: TokenKind::LBrace,
                         loc: SourceLocation::new(start, 1),
                     });
                 }
-                b'+' | b'*' | b'=' => {
-                    // Parse digraphs like `+=`, `*=`, `==`
+                b'}' => {
+                    let start = self.pos;
                     self.pos += 1;
-                    match self.buf.get(self.pos) {
-                        Some(b'=') => {
-                            self.pos += 1;
-                            return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 2, 2),
-                            });
-                        }
-                        _ => {
-                            return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 1, 1),
-                            });
-                        }
+                    return Some(Token {
+                        kind: TokenKind::RBrace,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'(' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::LParen,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b')' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::RParen,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'[' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::LBracket,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b']' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::RBracket,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b';' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Semicolon,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b',' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Comma,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'!' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Not,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'<' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Less,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'>' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Greater,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'&' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::BitwiseAnd,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'|' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::BitwiseOr,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'.' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Dot,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b':' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Colon,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'?' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    return Some(Token {
+                        kind: TokenKind::Question,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'+' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    if let Some(b'=') = self.buf.get(self.pos) {
+                        self.pos += 1;
+                        return Some(Token {
+                            kind: TokenKind::PlusEq,
+                            loc: SourceLocation::new(start, 2),
+                        });
                     }
+                    return Some(Token {
+                        kind: TokenKind::Plus,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'*' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    if let Some(b'=') = self.buf.get(self.pos) {
+                        self.pos += 1;
+                        return Some(Token {
+                            kind: TokenKind::StarEq,
+                            loc: SourceLocation::new(start, 2),
+                        });
+                    }
+                    return Some(Token {
+                        kind: TokenKind::Star,
+                        loc: SourceLocation::new(start, 1),
+                    });
+                }
+                b'=' => {
+                    let start = self.pos;
+                    self.pos += 1;
+                    if let Some(b'=') = self.buf.get(self.pos) {
+                        self.pos += 1;
+                        return Some(Token {
+                            kind: TokenKind::EqEq,
+                            loc: SourceLocation::new(start, 2),
+                        });
+                    }
+                    return Some(Token {
+                        kind: TokenKind::Eq,
+                        loc: SourceLocation::new(start, 1),
+                    });
                 }
                 b'-' => {
-                    // Parse digraphs like `->`, `-=`
+                    let start = self.pos;
                     self.pos += 1;
-                    match self.buf.get(self.pos) {
-                        Some(b'=') => {
-                            self.pos += 1;
-                            return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 2, 2),
-                            });
-                        }
-                        Some(b'>') => {
-                            self.pos += 1;
-                            return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 2, 2),
-                            });
-                        }
-                        _ => {
-                            return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 1, 1),
-                            });
-                        }
+                    if let Some(b'=') = self.buf.get(self.pos) {
+                        self.pos += 1;
+                        return Some(Token {
+                            kind: TokenKind::MinusEq,
+                            loc: SourceLocation::new(start, 2),
+                        });
+                    } else if let Some(b'>') = self.buf.get(self.pos) {
+                        self.pos += 1;
+                        return Some(Token {
+                            kind: TokenKind::Arrow,
+                            loc: SourceLocation::new(start, 2),
+                        });
                     }
+                    return Some(Token {
+                        kind: TokenKind::Minus,
+                        loc: SourceLocation::new(start, 1),
+                    });
                 }
                 b'/' => {
+                    let start = self.pos;
                     self.pos += 1;
                     match self.buf.get(self.pos) {
                         // Single-line comment
@@ -278,20 +487,21 @@ impl<'a> Tokenizer<'a> {
                                 }
                                 self.pos += 1;
                             }
+                            // Skip comment, continue lexing
                         }
                         // Digraph
                         Some(b'=') => {
                             self.pos += 1;
                             return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 2, 2),
+                                kind: TokenKind::SlashEq,
+                                loc: SourceLocation::new(start, 2),
                             });
                         }
                         // Not a comment, treat as a symbol
                         _ => {
                             return Some(Token {
-                                kind: TokenKind::Symbol,
-                                loc: SourceLocation::new(self.pos - 1, 1),
+                                kind: TokenKind::Slash,
+                                loc: SourceLocation::new(start, 1),
                             });
                         }
                     }
@@ -302,7 +512,6 @@ impl<'a> Tokenizer<'a> {
                 }
                 _ => {
                     self.pos += 1;
-
                     return Some(Token {
                         kind: TokenKind::Invalid,
                         loc: SourceLocation::new(self.pos - 1, 1),
@@ -310,7 +519,6 @@ impl<'a> Tokenizer<'a> {
                 }
             }
         }
-
         None
     }
 }
