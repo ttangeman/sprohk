@@ -1,11 +1,13 @@
 use std::fs;
-
+use pretty_assertions::assert_eq;
 use sprohk_lexer::Tokenizer;
 
 #[test]
 fn lexer_snapshot_tests() {
     let cwd = std::env::current_dir().expect("Failed to get current directory");
-    for entry in fs::read_dir(&cwd).expect("Failed to read tests directory") {
+    let test_dir = cwd.join("tests");
+
+    for entry in fs::read_dir(&test_dir).expect("Failed to read tests directory") {
         let entry = entry.expect("Failed to read entry");
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) == Some("spk") {

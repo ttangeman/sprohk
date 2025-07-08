@@ -11,6 +11,9 @@ workspace = true
 phf.workspace = true
 sprohk_core = { path = "../core" }
 
+[dev-dependencies]
+pretty_assertions.workspace = true
+
 [[bin]]
 name = "lexer_snapshots"
 path = "src/bin/gen_snapshots.rs"
