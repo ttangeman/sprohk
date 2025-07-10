@@ -6,9 +6,9 @@ pub struct SourceLocation {
 }
 
 impl SourceLocation {
-    pub fn new(start: usize, length: usize) -> Self {
+    pub fn new(line: usize, start: usize, length: usize) -> Self {
         SourceLocation {
-            line: 1,
+            line,
             start,
             end: start + length,
         }

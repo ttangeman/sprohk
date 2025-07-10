@@ -1,6 +1,6 @@
-use std::fs;
 use pretty_assertions::assert_eq;
 use sprohk_lexer::Tokenizer;
+use std::fs;
 
 #[test]
 fn lexer_snapshot_tests() {

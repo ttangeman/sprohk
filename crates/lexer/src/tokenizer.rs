@@ -98,14 +98,15 @@ pub enum TokenKind {
 /// Represents a token with its kind and source location.
 #[derive(Debug)]
 pub struct Token {
-    kind: TokenKind,
-    loc: SourceLocation,
+    pub kind: TokenKind,
+    pub loc: SourceLocation,
 }
 
 /// Tokenizes an arbitrary string into a sequence of tokens.
 pub struct Tokenizer<'a> {
     buf: &'a [u8],
     pos: usize,
+    line: usize,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -113,11 +114,13 @@ impl<'a> Tokenizer<'a> {
         Tokenizer {
             buf: buf.as_bytes(),
             pos: 0,
+            line: 1,
         }
     }
 
     fn parse_identifier_or_keyword(&mut self) -> Token {
         let start = self.pos;
+        let line = self.line;
         while let Some(&byte) = self.buf.get(self.pos) {
             if byte.is_ascii_alphanumeric() || byte == b'_' {
                 self.pos += 1;
@@ -131,18 +134,19 @@ impl<'a> Tokenizer<'a> {
         if let Some(keyword) = KEYWORDS.get(identifier) {
             Token {
                 kind: *keyword,
-                loc: SourceLocation::new(start, self.pos - start),
+                loc: SourceLocation::new(line, start, self.pos - start),
             }
         } else {
             Token {
                 kind: TokenKind::Identifier,
-                loc: SourceLocation::new(start, self.pos - start),
+                loc: SourceLocation::new(line, start, self.pos - start),
             }
         }
     }
 
     fn parse_number_literal(&mut self) -> Token {
         let start = self.pos;
+        let line = self.line;
 
         'outer: while let Some(&byte) = self.buf.get(self.pos) {
             match byte {
@@ -163,7 +167,7 @@ impl<'a> Tokenizer<'a> {
                                 // If we encounter another decimal point, it's invalid
                                 return Token {
                                     kind: TokenKind::Invalid,
-                                    loc: SourceLocation::new(start, self.pos - start),
+                                    loc: SourceLocation::new(line, start, self.pos - start),
                                 };
                             }
                             _ => break 'outer,
@@ -194,12 +198,13 @@ impl<'a> Tokenizer<'a> {
 
         Token {
             kind: TokenKind::NumberLiteral,
-            loc: SourceLocation::new(start, self.pos - start),
+            loc: SourceLocation::new(line, start, self.pos - start),
         }
     }
 
     fn parse_string_literal(&mut self) -> Token {
         let start = self.pos;
+        let line = self.line;
         self.pos += 1; // Skip the opening quote
 
         while let Some(&byte) = self.buf.get(self.pos) {
@@ -208,7 +213,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1; // Skip the closing quote
                     return Token {
                         kind: TokenKind::StringLiteral,
-                        loc: SourceLocation::new(start, self.pos - start),
+                        loc: SourceLocation::new(line, start, self.pos - start),
                     };
                 }
                 _ => {
@@ -219,12 +224,13 @@ impl<'a> Tokenizer<'a> {
 
         Token {
             kind: TokenKind::Invalid,
-            loc: SourceLocation::new(start, self.pos - start),
+            loc: SourceLocation::new(line, start, self.pos - start),
         }
     }
 
     fn parse_char_literal(&mut self) -> Token {
         let start: usize = self.pos;
+        let line = self.line;
         self.pos += 1; // Skip the opening quote
 
         match self.buf.get(self.pos) {
@@ -232,7 +238,7 @@ impl<'a> Tokenizer<'a> {
                 self.pos += 1; // Skip the closing quote
                 return Token {
                     kind: TokenKind::CharLiteral,
-                    loc: SourceLocation::new(start, self.pos - start),
+                    loc: SourceLocation::new(line, start, self.pos - start),
                 };
             }
             Some(_) => {
@@ -242,14 +248,14 @@ impl<'a> Tokenizer<'a> {
                         self.pos += 1; // Skip the closing quote
                         return Token {
                             kind: TokenKind::CharLiteral,
-                            loc: SourceLocation::new(start, self.pos - start),
+                            loc: SourceLocation::new(line, start, self.pos - start),
                         };
                     }
                     _ => {
                         // If we reach here, it means we didn't find a valid character literal
                         return Token {
                             kind: TokenKind::Invalid,
-                            loc: SourceLocation::new(start, self.pos - start),
+                            loc: SourceLocation::new(line, start, self.pos - start),
                         };
                     }
                 }
@@ -259,12 +265,11 @@ impl<'a> Tokenizer<'a> {
                 // treat it as an invalid character literal.
                 return Token {
                     kind: TokenKind::Invalid,
-                    loc: SourceLocation::new(start, self.pos - start),
+                    loc: SourceLocation::new(line, start, self.pos - start),
                 };
             }
         }
     }
-
     pub fn next(&mut self) -> Option<Token> {
         while let Some(&byte) = self.buf.get(self.pos) {
             match byte {
@@ -282,201 +287,231 @@ impl<'a> Tokenizer<'a> {
                 }
                 b'{' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::LBrace,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'}' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::RBrace,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'(' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::LParen,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b')' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::RParen,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'[' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::LBracket,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b']' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::RBracket,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b';' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Semicolon,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b',' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Comma,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'!' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Not,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'<' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Less,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'>' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Greater,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'&' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::BitwiseAnd,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'|' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::BitwiseOr,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'.' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Dot,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b':' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Colon,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'?' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     return Some(Token {
                         kind: TokenKind::Question,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'+' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     if let Some(b'=') = self.buf.get(self.pos) {
                         self.pos += 1;
                         return Some(Token {
                             kind: TokenKind::PlusEq,
-                            loc: SourceLocation::new(start, 2),
+                            loc: SourceLocation::new(line, start, 2),
                         });
                     }
                     return Some(Token {
                         kind: TokenKind::Plus,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'*' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     if let Some(b'=') = self.buf.get(self.pos) {
                         self.pos += 1;
                         return Some(Token {
                             kind: TokenKind::StarEq,
-                            loc: SourceLocation::new(start, 2),
+                            loc: SourceLocation::new(line, start, 2),
                         });
                     }
                     return Some(Token {
                         kind: TokenKind::Star,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'=' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
                     if let Some(b'=') = self.buf.get(self.pos) {
                         self.pos += 1;
                         return Some(Token {
                             kind: TokenKind::EqEq,
-                            loc: SourceLocation::new(start, 2),
+                            loc: SourceLocation::new(line, start, 2),
                         });
                     }
                     return Some(Token {
                         kind: TokenKind::Eq,
-                        loc: SourceLocation::new(start, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
                 b'-' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
-                    if let Some(b'=') = self.buf.get(self.pos) {
-                        self.pos += 1;
-                        return Some(Token {
-                            kind: TokenKind::MinusEq,
-                            loc: SourceLocation::new(start, 2),
-                        });
-                    } else if let Some(b'>') = self.buf.get(self.pos) {
-                        self.pos += 1;
-                        return Some(Token {
-                            kind: TokenKind::Arrow,
-                            loc: SourceLocation::new(start, 2),
-                        });
+
+                    match self.buf.get(self.pos) {
+                        // Check for minus equals
+                        Some(b'=') => {
+                            self.pos += 1;
+                            return Some(Token {
+                                kind: TokenKind::MinusEq,
+                                loc: SourceLocation::new(line, start, 2),
+                            });
+                        }
+                        // Check for arrow
+                        Some(b'>') => {
+                            self.pos += 1;
+                            return Some(Token {
+                                kind: TokenKind::Arrow,
+                                loc: SourceLocation::new(line, start, 2),
+                            });
+                        }
+                        _ => {
+                            return Some(Token {
+                                kind: TokenKind::Minus,
+                                loc: SourceLocation::new(line, start, 1),
+                            });
+                        }
                     }
-                    return Some(Token {
-                        kind: TokenKind::Minus,
-                        loc: SourceLocation::new(start, 1),
-                    });
                 }
                 b'/' => {
                     let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
+
                     match self.buf.get(self.pos) {
                         // Single-line comment
                         Some(b'/') => {
@@ -494,27 +529,34 @@ impl<'a> Tokenizer<'a> {
                             self.pos += 1;
                             return Some(Token {
                                 kind: TokenKind::SlashEq,
-                                loc: SourceLocation::new(start, 2),
+                                loc: SourceLocation::new(line, start, 2),
                             });
                         }
                         // Not a comment, treat as a symbol
                         _ => {
                             return Some(Token {
                                 kind: TokenKind::Slash,
-                                loc: SourceLocation::new(start, 1),
+                                loc: SourceLocation::new(line, start, 1),
                             });
                         }
                     }
                 }
                 // Whitespace
-                b' ' | b'\t' | b'\n' | b'\r' => {
+                b'\n' => {
+                    self.line += 1;
+                    self.pos += 1;
+                }
+                b' ' | b'\t' | b'\r' => {
                     self.pos += 1;
                 }
                 _ => {
+                    let start = self.pos;
+                    let line = self.line;
                     self.pos += 1;
+
                     return Some(Token {
                         kind: TokenKind::Invalid,
-                        loc: SourceLocation::new(self.pos - 1, 1),
+                        loc: SourceLocation::new(line, start, 1),
                     });
                 }
             }
