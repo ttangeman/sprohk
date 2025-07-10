@@ -14,6 +14,7 @@ rust-version = "1.86"
 edition = "2024"
 
 [workspace.dependencies]
+bumpalo = { version = "3.19.0", features = ["collections", "default"] }
 clap = { version = "4.5", features = ["derive"] }
 phf = { version = "0.12.1", features = ["default", "macros"] }
 pretty_assertions = { version = "1.4.1" }

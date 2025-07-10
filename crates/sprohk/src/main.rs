@@ -1,6 +1,7 @@
+use bumpalo::Bump;
 use clap::Parser;
 
-use sprohk_lexer::Tokenizer;
+use sprohk_parser::parse_ast;
 
 #[derive(Debug, Clone, clap::Subcommand)]
 enum Command {
@@ -23,19 +24,18 @@ enum ExitCode {
 fn run(source_file: &str) -> ExitCode {
     match std::fs::read_to_string(source_file) {
         Ok(source) => {
-            let mut tokenizer = Tokenizer::new(&source);
-            let mut tokens = Vec::new();
+            let arena = Bump::new();
+            let ast = parse_ast(&arena, &source);
 
-            while let Some(token) = tokenizer.next() {
-                tokens.push(token);
+            match ast {
+                Ok(ast) => {
+                    println!("Parsed AST successfully");
+                }
+                Err(e) => {
+                    eprintln!("Error parsing source file '{}': {}", source_file, e);
+                    return ExitCode::Error;
+                }
             }
-
-            println!("Parsed {} Tokens:", tokens.len());
-            for token in tokens {
-                println!("{:?}", token);
-            }
-
-            return ExitCode::Success;
         }
         Err(e) => match e.kind() {
             std::io::ErrorKind::NotFound => {

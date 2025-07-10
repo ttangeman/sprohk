@@ -9,8 +9,10 @@ default-run = "sprohk"
 workspace = true
 
 [dependencies]
+sprohk_parser = { path = "../parser" }
+
 clap.workspace = true
-sprohk_lexer = { path = "../lexer" }
+bumpalo.workspace = true
 
 [[bin]]
 name = "sprohk"
