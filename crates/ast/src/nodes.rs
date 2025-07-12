@@ -21,18 +21,18 @@ pub struct VarDecl {
 /// Note that it does not use the arena allocator like lexical tokens or
 /// AST information, due to the higher density of data that is encoded.
 pub struct NodeData {
-    variables: Vec<VarDecl>,
+    var_decls: Vec<VarDecl>,
 }
 
 impl NodeData {
     pub fn new() -> NodeData {
         NodeData {
-            variables: Vec::new(),
+            var_decls: Vec::new(),
         }
     }
 
     pub fn add_variable(&mut self, name: String) {
-        self.variables.push(VarDecl { name });
+        self.var_decls.push(VarDecl { name });
     }
 }
 

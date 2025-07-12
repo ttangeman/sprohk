@@ -5,6 +5,9 @@ use sprohk_lexer::{TokenKind, Tokenizer};
 
 pub fn parse_ast<'a>(arena: &'a Bump, source: &str) -> Result<Ast<'a>, String> {
     let mut ast = Ast::new(arena);
+    // Reserve space for tokens based on the source length (best guess).
+    ast.reserve_tokens(source.len() / 8);
+
     let mut tokenizer = Tokenizer::new(source);
 
     // Tokenize the source code and add tokens to the AST.

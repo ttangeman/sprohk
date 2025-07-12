@@ -29,8 +29,8 @@ impl<'a> Ast<'a> {
     pub fn new(arena: &'a Bump) -> Self {
         Ast {
             arena,
-            tokens: BumpVec::with_capacity_in(4096, arena),
-            token_locs: BumpVec::with_capacity_in(4096, arena),
+            tokens: BumpVec::new_in(arena),
+            token_locs: BumpVec::new_in(arena),
             nodes: BumpVec::new_in(arena),
             node_data: NodeData::new(),
             node_spans: BumpVec::new_in(arena),
@@ -44,13 +44,18 @@ impl<'a> Ast<'a> {
         self.token_locs.push(token.loc);
     }
 
+    pub fn reserve_tokens(&mut self, count: usize) {
+        // Reserve space for the tokens and their locations.
+        self.tokens.reserve(count);
+        self.token_locs.reserve(count);
+    }
+
     /// Uses the allocated token count to reserve space for nodes.
     /// Typically called before adding nodes to the AST and after
     /// adding all tokens.
     pub fn reserve_nodes(&mut self) {
-        // Guess that each node corresponds to, on average, 8 tokens.
-        // TODO: better guess
-        let count = std::cmp::max(self.tokens.len() / 8, 8);
+        // Guess that each node corresponds to, on average, 2 tokens.
+        let count = std::cmp::max(self.tokens.len() / 2, 8);
 
         self.nodes.reserve(count);
         self.node_spans.reserve(count);
