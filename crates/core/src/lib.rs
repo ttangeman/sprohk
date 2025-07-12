@@ -1,4 +1,5 @@
-#[derive(Debug)]
+/// Source location for a token in the source code.
+#[derive(Copy, Clone, Debug)]
 pub struct SourceLocation {
     pub line: usize,
     pub start: usize,
@@ -13,4 +14,12 @@ impl SourceLocation {
             end: start + length,
         }
     }
+}
+
+/// A generic span -- may be a range of token indices or even
+/// characters in the source code.
+#[derive(Copy, Clone, Debug)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
 }

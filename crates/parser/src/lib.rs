@@ -7,6 +7,7 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: &str) -> Result<Ast<'a>, String> {
     let mut ast = Ast::new(arena);
     let mut tokenizer = Tokenizer::new(source);
 
+    // Tokenize the source code and add tokens to the AST.
     while let Some(token) = tokenizer.next() {
         if token.kind == TokenKind::Invalid {
             // TODO: better error
@@ -17,6 +18,11 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: &str) -> Result<Ast<'a>, String> {
         }
         ast.add_token(token);
     }
+
+    // Reserve space for nodes based on the number of tokens (best guess)
+    ast.reserve_nodes();
+
+    // TODO: Parsing
 
     Ok(ast)
 }
