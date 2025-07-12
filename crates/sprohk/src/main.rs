@@ -24,7 +24,7 @@ enum ExitCode {
 fn run(source_file: &str) -> ExitCode {
     match std::fs::read_to_string(source_file) {
         Ok(source) => {
-            let arena = Bump::new();
+            let arena = Bump::with_capacity(1 * 1024 * 1024); // 1 MB arena for AST allocation
             let ast = parse_ast(&arena, &source);
 
             match ast {
