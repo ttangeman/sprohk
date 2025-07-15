@@ -5,6 +5,11 @@ use bumpalo::{Bump, collections::Vec as BumpVec};
 use sprohk_core::{SourceLocation, Span};
 use sprohk_lexer::{Token, TokenKind};
 
+/// Represents the index of a token in the AST.
+/// Maps to primarily the token kind and its source location as
+/// they use uniform memory layout.
+pub type TokenIndex = usize;
+
 /// Provides the AST (Abstract Syntax Tree) for the input source code.
 /// Uses arena allocation for efficient memory management of AST nodes and data.
 pub struct Ast<'a> {
@@ -48,6 +53,15 @@ impl<'a> Ast<'a> {
         // Reserve space for the tokens and their locations.
         self.tokens.reserve(count);
         self.token_locs.reserve(count);
+    }
+
+    /// Returns the token kind at the specified index.
+    pub fn get_token_kind(&self, index: usize) -> Option<TokenKind> {
+        self.tokens.get(index).cloned()
+    }
+
+    pub fn get_src_loc(&self, index: usize) -> Option<SourceLocation> {
+        self.token_locs.get(index).cloned()
     }
 
     /// Uses the allocated token count to reserve space for nodes.
