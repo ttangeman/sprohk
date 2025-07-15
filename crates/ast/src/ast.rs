@@ -74,4 +74,16 @@ impl<'a> Ast<'a> {
         self.nodes.reserve(count);
         self.node_spans.reserve(count);
     }
+
+    /// Adds a node to the AST with the specified kind and span.
+    /// The `add_data` function is used to add data to the node's metadata.
+    pub fn add_node_with_data<F>(&mut self, kind: NodeKind, span: Span, add_data: F)
+    where
+        F: FnOnce(&mut NodeData) -> DataIndex,
+    {
+        let data_index = add_data(&mut self.node_data);
+
+        self.nodes.push(Node { kind, data_index });
+        self.node_spans.push(span);
+    }
 }

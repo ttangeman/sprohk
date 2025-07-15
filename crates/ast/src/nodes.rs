@@ -44,8 +44,9 @@ impl NodeData {
         }
     }
 
-    pub fn add_variable(&mut self, name: String) {
-        self.var_decls.push(VarDecl { name });
+    pub fn add_var_decl(&mut self, decl: VarDecl) -> DataIndex {
+        let index = self.var_decls.len() as DataIndex;
+        self.var_decls.push(decl);
+        index
     }
 }
-

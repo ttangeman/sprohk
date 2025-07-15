@@ -28,11 +28,11 @@ fn run(source_file: &str) -> ExitCode {
             let ast = parse_ast(&arena, &source);
 
             match ast {
-                Ok(ast) => {
+                Ok(_ast) => {
                     println!("Parsed AST successfully");
                 }
                 Err(e) => {
-                    eprintln!("Error parsing source file '{}': {}", source_file, e);
+                    eprintln!("Error parsing source file '{}': {:?}", source_file, e);
                     return ExitCode::Error;
                 }
             }
