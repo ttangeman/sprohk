@@ -99,9 +99,18 @@ impl TokenKind {
     pub fn is_primitive_type(self) -> bool {
         matches!(
             self,
-            TokenKind::I8 | TokenKind::I16 | TokenKind::I32 | TokenKind::I64 |
-            TokenKind::U8 | TokenKind::U16 | TokenKind::U32 | TokenKind::U64 |
-            TokenKind::F32 | TokenKind::F64 | TokenKind::Str | TokenKind::Char
+            TokenKind::I8
+                | TokenKind::I16
+                | TokenKind::I32
+                | TokenKind::I64
+                | TokenKind::U8
+                | TokenKind::U16
+                | TokenKind::U32
+                | TokenKind::U64
+                | TokenKind::F32
+                | TokenKind::F64
+                | TokenKind::Str
+                | TokenKind::Char
         )
     }
 }
@@ -575,4 +584,3 @@ impl<'a> Tokenizer<'a> {
         None
     }
 }
-

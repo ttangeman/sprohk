@@ -3,18 +3,18 @@ use crate::ast::TokenIndex;
 use sprohk_lexer::TokenKind;
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum NodeKind {
     VarDecl,
 }
 
 pub type DataIndex = u32;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Node {
     // The kind of the node, e.g., variable, function, etc.
     pub kind: NodeKind,
-    // The index to the node data.
+    // The index to the derived node data.
     pub data_index: DataIndex,
 }
 
@@ -37,6 +37,10 @@ pub struct NodeData {
     var_decls: Vec<VarDecl>,
 }
 
+// Note on getters: runtime checking of the `NodeKind` is maintained for the node data to
+// avoid easy mistakes when accessing the data. Single accesses are considered the slow
+// path by design, as the node data `Vec`s are intended to be used for bulk operations,
+// so getters are mostly provided for convenience in tests or debugging.
 impl NodeData {
     pub fn new() -> NodeData {
         NodeData {
@@ -48,5 +52,10 @@ impl NodeData {
         let index = self.var_decls.len() as DataIndex;
         self.var_decls.push(decl);
         index
+    }
+
+    pub fn get_var_decl(&self, node: Node) -> &VarDecl {
+        assert_eq!(node.kind, NodeKind::VarDecl);
+        &self.var_decls[node.data_index as usize]
     }
 }

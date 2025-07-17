@@ -1,7 +1,7 @@
 use bumpalo::Bump;
 use clap::Parser;
-
 use sprohk_parser::parse_ast;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, clap::Subcommand)]
 enum Command {
@@ -24,8 +24,9 @@ enum ExitCode {
 fn run(source_file: &str) -> ExitCode {
     match std::fs::read_to_string(source_file) {
         Ok(source) => {
+            let source = Rc::new(source);
             let arena = Bump::with_capacity(1 * 1024 * 1024); // 1 MB arena for AST allocation
-            let ast = parse_ast(&arena, &source);
+            let ast = parse_ast(&arena, source);
 
             match ast {
                 Ok(_ast) => {
