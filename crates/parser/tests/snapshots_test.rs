@@ -18,40 +18,21 @@ fn parser_snapshot_tests() {
                 fs::read_to_string(&path).expect(&format!("Failed to read {}", path.display()));
 
             let ast = parse_ast(&arena, source.into()).expect("Failed to parse AST");
-            let nodes = ast
-                .nodes()
-                .iter()
-                .map(|node| format!("{:?}", node))
-                .collect::<Vec<_>>();
 
             // Read the expected tokens from the golden file
             let golden_dir = path.parent().unwrap().join("snapshots");
             let golden_path = golden_dir
                 .join(path.file_name().unwrap())
                 .with_extension("golden");
-            let golden_data_path = golden_dir
-                .join(path.file_name().unwrap())
-                .with_extension("data");
 
             let expected = fs::read_to_string(&golden_path)
                 .expect(&format!("Failed to read {}", golden_path.display()));
-            let actual = nodes.join("\n");
+            let actual = ast.render_ast();
 
             assert_eq!(
                 actual,
                 expected,
                 "Parser output did not match golden file for {}",
-                path.display()
-            );
-
-            let expected = fs::read_to_string(&golden_data_path)
-                .expect(&format!("Failed to read {}", golden_data_path.display()));
-            let actual = format!("{:#?}", ast.node_data());
-
-            assert_eq!(
-                actual,
-                expected,
-                "Node data did not match golden file for {}",
                 path.display()
             );
         }

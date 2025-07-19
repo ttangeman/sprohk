@@ -121,4 +121,37 @@ impl<'a> Ast<'a> {
             None
         }
     }
+
+    /// Outputs the AST nodes in a human-readable format.
+    /// This is primarily used for debugging and snapshot testing.
+    pub fn render_ast(&self) -> String {
+        let mut out = String::new();
+        for (i, node) in self.nodes.iter().enumerate() {
+            let kind = format!("{:?}", node.kind);
+            let span = self.node_spans.get(i);
+            let token_indices = match span {
+                Some(s) => format!("[{}..{}]", s.start, s.end),
+                None => "[?]".to_string(),
+            };
+            out.push_str(&format!("node {} {{\n", i));
+            out.push_str(&format!("  kind: {}\n", kind));
+            out.push_str(&format!("  tokens: {}\n", token_indices));
+            match node.kind {
+                NodeKind::VarDecl => {
+                    let var_decl = self.node_data.get_var_decl(*node);
+                    let name_str = self.get_src(var_decl.name).unwrap_or("");
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    specifier: {:?}\n", var_decl.specifier));
+                    out.push_str(&format!("    name: '{}'\n", name_str));
+                    if let Some(t) = var_decl.type_spec {
+                        let type_spec_str = self.get_src(t).unwrap_or("");
+                        out.push_str(&format!("    type_spec: '{}'\n", type_spec_str));
+                    }
+                    out.push_str("  }\n");
+                } // Add more node kinds here as needed
+            }
+            out.push_str("}\n");
+        }
+        out
+    }
 }

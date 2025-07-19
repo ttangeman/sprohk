@@ -1,1 +1,9 @@
-Node { kind: VarDecl, data_index: 0 }
+node 0 {
+  kind: VarDecl
+  tokens: [0..4]
+  data: {
+    specifier: Var
+    name: 'foo'
+    type_spec: 'i32'
+  }
+}

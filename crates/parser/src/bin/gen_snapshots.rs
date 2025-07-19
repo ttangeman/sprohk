@@ -19,14 +19,6 @@ fn main() {
                 fs::read_to_string(&path).expect(&format!("Failed to read {}", path.display()));
             let ast = parse_ast(&arena, source.into()).expect("Failed to parse AST");
 
-            let nodes = ast
-                .nodes()
-                .iter()
-                .map(|node| format!("{:?}", node))
-                .collect::<Vec<_>>();
-
-            let node_data = ast.node_data();
-
             // Construct the golden file path and write the snapshot
             // Place the golden file in a "snapshots" subdirectory next to the .spk file
             let golden_dir = path.parent().unwrap().join("snapshots");
@@ -34,24 +26,11 @@ fn main() {
             let golden_path = golden_dir
                 .join(path.file_name().unwrap())
                 .with_extension("golden");
-            let golden_data_path = golden_dir
-                .join(path.file_name().unwrap())
-                .with_extension("data");
 
-            fs::write(&golden_path, nodes.join("\n"))
+            fs::write(&golden_path, ast.render_ast())
                 .expect(&format!("Failed to write {}", golden_path.display()));
 
             println!("Generated golden file at: {}", golden_path.display());
-
-            fs::write(&golden_data_path, format!("{:#?}", node_data)).expect(&format!(
-                "Failed to write node data to {}",
-                golden_data_path.display()
-            ));
-
-            println!(
-                "Generated node data file at: {}",
-                golden_data_path.display()
-            );
         }
     }
 }
