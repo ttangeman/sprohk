@@ -13,3 +13,10 @@ sprohk_core = { path = "../core" }
 sprohk_lexer = { path = "../lexer" }
 
 bumpalo.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+
+[[bin]]
+name = "parser_snapshots"
+path = "src/bin/gen_snapshots.rs"

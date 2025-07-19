@@ -55,36 +55,3 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
 
     Ok(ast)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_var_decl() {
-        let arena = Bump::new();
-        let source = Rc::new("var foo: i32;".to_string());
-        let result = parse_ast(&arena, source);
-        assert!(result.is_ok());
-
-        let ast = result.unwrap();
-        assert_eq!(ast.tokens().len(), 5); // var, identifier, colon, type, semicolon
-        assert_eq!(ast.nodes().len(), 1); // One variable declaration node
-
-        let node = ast.nodes()[0];
-        assert_eq!(node.kind, NodeKind::VarDecl);
-
-        let node_data = ast.node_data().get_var_decl(node);
-        assert_eq!(node_data.specifier, TokenKind::Var);
-
-        assert_eq!(
-            ast.get_token_kind(node_data.name),
-            Some(TokenKind::Identifier)
-        );
-        assert_eq!(ast.get_src(node_data.name), Some("foo"));
-        assert_eq!(
-            ast.get_token_kind(node_data.type_spec.unwrap()),
-            Some(TokenKind::I32)
-        );
-    }
-}

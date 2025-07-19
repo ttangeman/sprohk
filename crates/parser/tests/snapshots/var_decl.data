@@ -1,0 +1,11 @@
+NodeData {
+    var_decls: [
+        VarDecl {
+            specifier: Var,
+            name: 1,
+            type_spec: Some(
+                3,
+            ),
+        },
+    ],
+}
