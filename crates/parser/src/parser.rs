@@ -117,7 +117,7 @@ impl Parser {
             },
             Span {
                 start,
-                end: self.at(),
+                end: self.at() - 1,
             },
         ))
     }
