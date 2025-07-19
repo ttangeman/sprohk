@@ -3,7 +3,7 @@ use sprohk_parser::parse_ast;
 use std::fs;
 
 #[test]
-fn lexer_snapshot_tests() {
+fn parser_snapshot_tests() {
     let cwd = std::env::current_dir().expect("Failed to get current directory");
     let test_dir = cwd.join("tests");
 
