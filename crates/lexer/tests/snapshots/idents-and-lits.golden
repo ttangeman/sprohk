@@ -34,3 +34,4 @@ Token { kind: Colon, loc: SourceLocation { line: 6, start: 110, end: 111 } }
 Token { kind: Char, loc: SourceLocation { line: 6, start: 112, end: 116 } }
 Token { kind: Eq, loc: SourceLocation { line: 6, start: 117, end: 118 } }
 Token { kind: CharLiteral, loc: SourceLocation { line: 6, start: 119, end: 121 } }
+Token { kind: Eof, loc: SourceLocation { line: 6, start: 121, end: 121 } }

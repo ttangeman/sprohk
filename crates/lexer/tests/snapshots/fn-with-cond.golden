@@ -45,3 +45,4 @@ Token { kind: Null, loc: SourceLocation { line: 12, start: 218, end: 222 } }
 Token { kind: Semicolon, loc: SourceLocation { line: 12, start: 222, end: 223 } }
 Token { kind: RBrace, loc: SourceLocation { line: 13, start: 228, end: 229 } }
 Token { kind: RBrace, loc: SourceLocation { line: 14, start: 230, end: 231 } }
+Token { kind: Eof, loc: SourceLocation { line: 14, start: 231, end: 231 } }

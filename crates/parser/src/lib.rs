@@ -24,7 +24,10 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
                     token.kind, token.loc.line, token.loc.start
                 )));
             }
-            TokenKind::Eof => break,
+            TokenKind::Eof => {
+                ast.add_token(token);
+                break;
+            }
             _ => ast.add_token(token),
         }
     }

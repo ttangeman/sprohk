@@ -19,11 +19,11 @@ fn main() {
             let mut tokens = Vec::new();
             loop {
                 let token = tokenizer.next();
-                match token.kind {
-                    TokenKind::Eof => break, // End of file reached
-                    _ => {}
-                }
                 tokens.push(format!("{:?}", token));
+
+                if token.kind == TokenKind::Eof {
+                    break;
+                }
             }
 
             // Construct the golden file path and write the snapshot

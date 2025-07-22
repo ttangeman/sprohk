@@ -19,10 +19,11 @@ fn lexer_snapshot_tests() {
             let mut tokens = Vec::new();
             loop {
                 let token = tokenizer.next();
+                tokens.push(format!("{:?}", token));
+
                 if token.kind == TokenKind::Eof {
                     break; // End of file reached
                 }
-                tokens.push(format!("{:?}", token));
             }
 
             // Read the expected tokens from the golden file
