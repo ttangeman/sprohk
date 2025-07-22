@@ -48,6 +48,7 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
                 parser.advance()
             }
 
+            TokenKind::Eof => break,
             _ => return Err(ParserError::UnexpectedToken(token)),
         }
     }
