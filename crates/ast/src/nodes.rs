@@ -29,15 +29,17 @@ pub struct VarDecl {
     pub name: TokenIndex,
 
     // The index of the type specification expr, if any.
-    pub type_spec: Option<NodeIndex>,
+    pub type_expr: Option<NodeIndex>,
     // The index of the initializer node, if any.
     pub initializer: Option<NodeIndex>,
 }
 
 #[derive(Debug)]
-pub struct TypeExpr {
-    // The index of the root token in the source code.
-    // If this is a primitive type or identifier, it can be resolved to a string.
-    // If this is a complex type, it may refer to a more complex structure.
-    pub root: TokenIndex,
+pub enum TypeExpr {
+    /// A simple type expression that refers to a primitive type.
+    Primitive(TokenIndex),
+    /// A type expression that refers to a non-ambiguous (i.e. no compile
+    /// time expression or procedure) type name.
+    TypeName(TokenIndex),
+    // TODO: More complicated compile time expressions
 }

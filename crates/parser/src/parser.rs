@@ -31,6 +31,8 @@ impl Parser {
         self.cursor += 1;
     }
 
+    /// Returns the span given the start and current position of the cursor.
+    /// The end of the span is exclusive.
     pub fn span_from(&self, start: TokenIndex) -> Span {
         let end = self.at();
         Span { start, end }
@@ -52,9 +54,37 @@ impl Parser {
         }
     }
 
+    /// Expects any token that matches the provided predicate.
+    /// If it matches, it advances the cursor and returns the current index.
     pub fn expect_any<F>(&mut self, ast: &Ast, expected: F) -> Result<TokenIndex, ParserError>
     where
         F: Fn(TokenKind) -> bool,
+    {
+        let current = self.at();
+        if let Some(token) = ast.get_token_kind(current) {
+            if expected(token) {
+                self.advance();
+                Ok(current)
+            } else {
+                Err(ParserError::UnexpectedToken(token))
+            }
+        } else {
+            Err(ParserError::InvalidSyntax(format!(
+                "Expected token at index {}, but found end of stream",
+                current
+            )))
+        }
+    }
+
+    /// Expects any token that matches the provided predicate, allowing state mutation.
+    /// If it matches, it advances the cursor and returns the current index.
+    pub fn expect_any_mut<F>(
+        &mut self,
+        ast: &Ast,
+        expected: &mut F,
+    ) -> Result<TokenIndex, ParserError>
+    where
+        F: FnMut(TokenKind) -> bool,
     {
         let current = self.at();
         if let Some(token) = ast.get_token_kind(current) {
@@ -87,12 +117,16 @@ impl Parser {
     /// Parses a type expression from the current position in the token stream.
     pub fn parse_type_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let type_start = self.at();
-        let type_index = self.expect_any(ast, |kind| {
+        let mut is_primitive = false;
+        let type_index = self.expect_any_mut(ast, &mut |kind| {
             match kind {
                 // Possible type name
                 TokenKind::Identifier => true,
                 // Primitive type
-                k if k.is_primitive_type() => true,
+                k if k.is_primitive_type() => {
+                    is_primitive = true;
+                    true
+                }
                 _ => false,
             }
         })?;
@@ -101,7 +135,11 @@ impl Parser {
             NodeKind::TypeExpr,
             self.span_from(type_start),
             |node_data| {
-                let type_expr = TypeExpr { root: type_index };
+                let type_expr = if is_primitive {
+                    TypeExpr::Primitive(type_index)
+                } else {
+                    TypeExpr::TypeName(type_index)
+                };
                 node_data.add_type_expr(type_expr)
             },
         ))
@@ -126,7 +164,7 @@ impl Parser {
         // Parse the identifier token
         let name = self.expect(ast, TokenKind::Identifier)?;
         // Parse the optional type specification
-        let type_spec = if self.accept(ast, TokenKind::Colon).is_some() {
+        let type_expr = if self.accept(ast, TokenKind::Colon).is_some() {
             Some(self.parse_type_expr(ast)?)
         } else {
             None
@@ -140,7 +178,7 @@ impl Parser {
                 let var_decl = VarDecl {
                     specifier,
                     name,
-                    type_spec,
+                    type_expr,
                     initializer,
                 };
                 node_data.add_var_decl(var_decl)

@@ -11,6 +11,6 @@ node 1 {
   data: {
     specifier: Var
     name: 'foo'
-    type_spec: 'i32'
+    type_expr: 0
   }
 }

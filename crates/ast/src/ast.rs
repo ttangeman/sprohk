@@ -147,24 +147,23 @@ impl<'a> Ast<'a> {
                     out.push_str("  data: {\n");
                     out.push_str(&format!("    specifier: {:?}\n", var_decl.specifier));
                     out.push_str(&format!("    name: '{}'\n", name_str));
-                    if let Some(t) = var_decl.type_spec {
-                        let type_spec_node = self.nodes.get(t as usize);
-                        let type_spec_str = if let Some(node) = type_spec_node {
-                            let index = self.node_data.get_type_expr(*node).root;
-                            self.get_src(index).unwrap_or("").to_string()
-                        } else {
-                            "?".to_string()
-                        };
-                        out.push_str(&format!("    type_spec: '{}'\n", type_spec_str));
+                    if let Some(t) = var_decl.type_expr {
+                        let node = self.nodes.get(t as usize);
+                        let type_expr = node.map_or("?".to_string(), |n| n.data_index.to_string());
+                        out.push_str(&format!("    type_expr: {}\n", type_expr));
                     }
                     out.push_str("  }\n");
                 }
                 NodeKind::TypeExpr => {
                     let type_expr = self.node_data.get_type_expr(*node);
-                    let root_str = self.get_src(type_expr.root).unwrap_or("");
-                    out.push_str("  data: {\n");
-                    out.push_str(&format!("    root: '{}'\n", root_str));
-                    out.push_str("  }\n");
+                    match *type_expr {
+                        TypeExpr::Primitive(index) | TypeExpr::TypeName(index) => {
+                            let root_str = self.get_src(index).unwrap_or("");
+                            out.push_str("  data: {\n");
+                            out.push_str(&format!("    root: '{}'\n", root_str));
+                            out.push_str("  }\n");
+                        }
+                    }
                 }
             }
             out.push_str("}\n");
