@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use sprohk_lexer::Tokenizer;
+use sprohk_lexer::{TokenKind, Tokenizer};
 use std::fs;
 
 #[test]
@@ -17,7 +17,11 @@ fn lexer_snapshot_tests() {
 
             let mut tokenizer = Tokenizer::new(&source);
             let mut tokens = Vec::new();
-            while let Some(token) = tokenizer.next() {
+            loop {
+                let token = tokenizer.next();
+                if token.kind == TokenKind::Eof {
+                    break; // End of file reached
+                }
                 tokens.push(format!("{:?}", token));
             }
 

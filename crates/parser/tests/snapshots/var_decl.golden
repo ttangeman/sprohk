@@ -1,6 +1,13 @@
 node 0 {
+  kind: TypeExpr
+  tokens: [3..4]
+  data: {
+    root: 'i32'
+  }
+}
+node 1 {
   kind: VarDecl
-  tokens: [0..3]
+  tokens: [0..4]
   data: {
     specifier: Var
     name: 'foo'

@@ -1,4 +1,4 @@
-use crate::nodes::*;
+use crate::{node_data::*, nodes::*};
 
 use bumpalo::{Bump, collections::Vec as BumpVec};
 use sprohk_core::{SourceLocation, Span};
@@ -29,6 +29,7 @@ pub struct Ast<'a> {
     node_data: NodeData,
     // The data associated with each node, such as variable indices or other metadata.
     // Span of tokens the node covers (indices).
+    // Note that the end of the range is exclusive.
     node_spans: BumpVec<'a, Span>,
 }
 
@@ -55,14 +56,17 @@ impl<'a> Ast<'a> {
 
     /// Adds a node to the AST with the specified kind and span.
     /// The `add_data` function is used to add data to the node's metadata.
-    pub fn add_node_with_data<F>(&mut self, kind: NodeKind, span: Span, add_data: F)
+    pub fn add_node_with_data<F>(&mut self, kind: NodeKind, span: Span, add_data: F) -> NodeIndex
     where
         F: FnOnce(&mut NodeData) -> DataIndex,
     {
         let data_index = add_data(&mut self.node_data);
+        let node_index = self.nodes.len() as NodeIndex;
 
         self.nodes.push(Node { kind, data_index });
         self.node_spans.push(span);
+
+        node_index
     }
 
     /// Reserves space for the specified number of tokens in the AST.
@@ -144,11 +148,24 @@ impl<'a> Ast<'a> {
                     out.push_str(&format!("    specifier: {:?}\n", var_decl.specifier));
                     out.push_str(&format!("    name: '{}'\n", name_str));
                     if let Some(t) = var_decl.type_spec {
-                        let type_spec_str = self.get_src(t).unwrap_or("");
+                        let type_spec_node = self.nodes.get(t as usize);
+                        let type_spec_str = if let Some(node) = type_spec_node {
+                            let index = self.node_data.get_type_expr(*node).root;
+                            self.get_src(index).unwrap_or("").to_string()
+                        } else {
+                            "?".to_string()
+                        };
                         out.push_str(&format!("    type_spec: '{}'\n", type_spec_str));
                     }
                     out.push_str("  }\n");
-                } // Add more node kinds here as needed
+                }
+                NodeKind::TypeExpr => {
+                    let type_expr = self.node_data.get_type_expr(*node);
+                    let root_str = self.get_src(type_expr.root).unwrap_or("");
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    root: '{}'\n", root_str));
+                    out.push_str("  }\n");
+                }
             }
             out.push_str("}\n");
         }

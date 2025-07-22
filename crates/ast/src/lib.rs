@@ -1,5 +1,7 @@
 pub mod ast;
+pub mod node_data;
 pub mod nodes;
 
-pub use ast::Ast;
+pub use ast::{Ast, TokenIndex};
+pub use node_data::*;
 pub use nodes::*;

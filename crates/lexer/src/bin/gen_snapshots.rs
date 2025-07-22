@@ -1,4 +1,4 @@
-use sprohk_lexer::Tokenizer;
+use sprohk_lexer::{TokenKind, Tokenizer};
 use std::fs;
 use std::path::Path;
 
@@ -17,7 +17,12 @@ fn main() {
 
             let mut tokenizer = Tokenizer::new(&source);
             let mut tokens = Vec::new();
-            while let Some(token) = tokenizer.next() {
+            loop {
+                let token = tokenizer.next();
+                match token.kind {
+                    TokenKind::Eof => break, // End of file reached
+                    _ => {}
+                }
                 tokens.push(format!("{:?}", token));
             }
 

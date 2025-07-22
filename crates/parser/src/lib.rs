@@ -3,7 +3,7 @@ mod parser;
 pub use parser::{Parser, ParserError};
 
 use bumpalo::Bump;
-use sprohk_ast::{Ast, NodeKind};
+use sprohk_ast::Ast;
 use sprohk_lexer::{TokenKind, Tokenizer};
 use std::rc::Rc;
 
@@ -15,17 +15,18 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
     let mut tokenizer = Tokenizer::new(&source);
 
     // Tokenize the source code and add tokens to the AST.
-    while let Some(token) = tokenizer.next() {
-        if token.kind == TokenKind::Invalid {
-            return Err(ParserError::InvalidSyntax(format!(
-                "Invalid token {:?} ({}:{})",
-                // TODO: Compute column instead of using start
-                token.kind,
-                token.loc.line,
-                token.loc.start
-            )));
+    loop {
+        let token = tokenizer.next();
+        match token.kind {
+            TokenKind::Invalid => {
+                return Err(ParserError::InvalidSyntax(format!(
+                    "Invalid token {:?} at {}:{}",
+                    token.kind, token.loc.line, token.loc.start
+                )));
+            }
+            TokenKind::Eof => break,
+            _ => ast.add_token(token),
         }
-        ast.add_token(token);
     }
 
     // Reserve space for nodes based on the number of tokens (best guess)
@@ -36,12 +37,7 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
     while let Some(token) = ast.get_token_kind(parser.at()) {
         match token {
             TokenKind::Var | TokenKind::Let | TokenKind::Const => {
-                // Parse a variable declaration
-                let (var_decl, span) = parser.parse_var_decl(&mut ast, token)?;
-                // Add the variable declaration node to the AST
-                ast.add_node_with_data(NodeKind::VarDecl, span, |node_data| {
-                    node_data.add_var_decl(var_decl)
-                });
+                parser.parse_var_decl(&mut ast, token)?;
             }
 
             TokenKind::Semicolon => {
