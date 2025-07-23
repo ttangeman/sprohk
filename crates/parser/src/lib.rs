@@ -43,11 +43,6 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
                 parser.parse_var_decl(&mut ast, token)?;
             }
 
-            TokenKind::Semicolon => {
-                // Just consume the semicolon, no action needed for now
-                parser.advance()
-            }
-
             TokenKind::Eof => break,
             _ => return Err(ParserError::UnexpectedToken(token)),
         }

@@ -9,6 +9,7 @@ pub type DataIndex = u32;
 pub struct NodeData {
     var_decls: Vec<VarDecl>,
     type_exprs: Vec<TypeExpr>,
+    assign_exprs: Vec<AssignExpr>,
 }
 
 // Note on getters: runtime checking of the `NodeKind` is maintained for the node data to
@@ -20,6 +21,7 @@ impl NodeData {
         NodeData {
             var_decls: Vec::new(),
             type_exprs: Vec::new(),
+            assign_exprs: Vec::new(),
         }
     }
 
@@ -35,6 +37,12 @@ impl NodeData {
         index
     }
 
+    pub fn add_assign_expr(&mut self, assign_expr: AssignExpr) -> DataIndex {
+        let index = self.assign_exprs.len() as DataIndex;
+        self.assign_exprs.push(assign_expr);
+        index
+    }
+
     pub fn get_var_decl(&self, node: Node) -> &VarDecl {
         assert_eq!(node.kind, NodeKind::VarDecl);
         &self.var_decls[node.data_index as usize]
@@ -43,5 +51,10 @@ impl NodeData {
     pub fn get_type_expr(&self, node: Node) -> &TypeExpr {
         assert_eq!(node.kind, NodeKind::TypeExpr);
         &self.type_exprs[node.data_index as usize]
+    }
+
+    pub fn get_assign_expr(&self, node: Node) -> &AssignExpr {
+        assert_eq!(node.kind, NodeKind::AssignExpr);
+        &self.assign_exprs[node.data_index as usize]
     }
 }

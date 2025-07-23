@@ -115,6 +115,18 @@ impl TokenKind {
                 | TokenKind::Char
         )
     }
+
+    pub fn is_literal(self) -> bool {
+        matches!(
+            self,
+            TokenKind::NumberLiteral
+                | TokenKind::StringLiteral
+                | TokenKind::CharLiteral
+                | TokenKind::True
+                | TokenKind::False
+                | TokenKind::Null
+        )
+    }
 }
 
 /// Represents a token with its kind and source location.

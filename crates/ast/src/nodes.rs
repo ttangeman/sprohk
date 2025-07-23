@@ -8,6 +8,7 @@ use sprohk_lexer::TokenKind;
 pub enum NodeKind {
     VarDecl,
     TypeExpr,
+    AssignExpr,
 }
 
 pub type NodeIndex = u32;
@@ -38,8 +39,8 @@ pub struct VarDecl {
 
     // The index of the type specification expr, if any.
     pub type_expr: Option<NodeIndex>,
-    // The index of the initializer node, if any.
-    pub initializer: Option<NodeIndex>,
+    // The index of the assignment expr, if any.
+    pub assign_expr: Option<NodeIndex>,
 }
 
 /// Represents the possible type expressions linked to a variable declaration
@@ -52,4 +53,11 @@ pub enum TypeExpr {
     /// time expression or procedure) type name.
     TypeName(TokenIndex),
     // TODO: More complicated compile time expressions
+}
+
+/// Special case assignment expression for variable declarations.
+#[derive(Debug)]
+pub enum AssignExpr {
+    Variable(TokenIndex),
+    Literal(TokenIndex),
 }

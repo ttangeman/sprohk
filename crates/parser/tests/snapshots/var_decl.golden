@@ -1,16 +1,48 @@
 node 0 {
+  kind: VarDecl
+  tokens: [0..2]
+  data: {
+    specifier: Var
+    name: 'foo'
+  }
+}
+node 1 {
   kind: TypeExpr
-  tokens: [3..4]
+  tokens: [6..7]
   data: {
     root: 'i32'
   }
 }
-node 1 {
+node 2 {
   kind: VarDecl
-  tokens: [0..4]
+  tokens: [3..5]
   data: {
-    specifier: Var
-    name: 'foo'
-    type_expr: 0
+    specifier: Let
+    name: 'bar'
+    type_expr: 1
+  }
+}
+node 3 {
+  kind: TypeExpr
+  tokens: [11..12]
+  data: {
+    root: 'i32'
+  }
+}
+node 4 {
+  kind: AssignExpr
+  tokens: [13..14]
+  data: {
+    literal: '42'
+  }
+}
+node 5 {
+  kind: VarDecl
+  tokens: [8..10]
+  data: {
+    specifier: Const
+    name: 'foobar'
+    type_expr: 3
+    assign_expr: 4
   }
 }

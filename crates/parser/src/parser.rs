@@ -1,4 +1,4 @@
-use sprohk_ast::{Ast, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl};
+use sprohk_ast::{AssignExpr, Ast, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl};
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
 
@@ -7,6 +7,7 @@ pub enum ParserError {
     ExpectedToken(TokenKind),
     UnexpectedToken(TokenKind),
     InvalidSyntax(String),
+    UnexpectedEof,
 }
 
 /// State machine for the parser:
@@ -50,7 +51,7 @@ impl Parser {
                 Err(ParserError::UnexpectedToken(token))
             }
         } else {
-            Err(ParserError::ExpectedToken(expected))
+            Err(ParserError::UnexpectedEof)
         }
     }
 
@@ -69,10 +70,7 @@ impl Parser {
                 Err(ParserError::UnexpectedToken(token))
             }
         } else {
-            Err(ParserError::InvalidSyntax(format!(
-                "Expected token at index {}, but found end of stream",
-                current
-            )))
+            Err(ParserError::UnexpectedEof)
         }
     }
 
@@ -95,10 +93,7 @@ impl Parser {
                 Err(ParserError::UnexpectedToken(token))
             }
         } else {
-            Err(ParserError::InvalidSyntax(format!(
-                "Expected token at index {}, but found end of stream",
-                current
-            )))
+            Err(ParserError::UnexpectedEof)
         }
     }
 
@@ -145,6 +140,83 @@ impl Parser {
         ))
     }
 
+    /// Parses an expression in the context of an assignment operation.
+    /// It is assumed that the equal sign (`=`) has already been consumed.
+    pub fn parse_assign_expr(&mut self, ast: &mut Ast) -> Result<Option<NodeIndex>, ParserError> {
+        let start = self.at();
+        let mut root_node: Option<NodeIndex> = None;
+
+        while let Some(token) = ast.get_token_kind(self.at()) {
+            match token {
+                // Parse the identifier as a variable name or function name.
+                TokenKind::Identifier => {
+                    let name_index = self.at();
+                    self.advance();
+
+                    if root_node.is_none() {
+                        root_node = Some(ast.add_node_with_data(
+                            NodeKind::AssignExpr,
+                            self.span_from(start),
+                            |node_data| {
+                                let assign_expr = AssignExpr::Variable(name_index);
+                                node_data.add_assign_expr(assign_expr)
+                            },
+                        ));
+                    } else {
+                        return Err(ParserError::InvalidSyntax(
+                            "Unexpected identifier: multiple identifiers in assignment expression"
+                                .to_string(),
+                        ));
+                    }
+
+                    // TODO: accept function calls
+                }
+
+                // Parse a literal value (e.g., number, string).
+                _ if token.is_literal() => {
+                    let literal_index = self.at();
+                    self.advance();
+
+                    if root_node.is_none() {
+                        root_node = Some(ast.add_node_with_data(
+                            NodeKind::AssignExpr,
+                            self.span_from(start),
+                            |node_data| {
+                                let assign_expr = AssignExpr::Literal(literal_index);
+                                node_data.add_assign_expr(assign_expr)
+                            },
+                        ));
+                    } else {
+                        return Err(ParserError::InvalidSyntax(
+                            "Unexpected literal: multiple literals in assignment expression"
+                                .to_string(),
+                        ));
+                    }
+                }
+
+                // Terminates expression parsing.
+                TokenKind::Semicolon => {
+                    self.advance();
+
+                    return root_node
+                        .is_some()
+                        .then(|| {
+                            // If we have a root node, return it.
+                            root_node
+                        })
+                        .ok_or(ParserError::InvalidSyntax(
+                            "Expected an expression before semicolon".to_string(),
+                        ));
+                }
+
+                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
+                _ => return Err(ParserError::UnexpectedToken(token)),
+            }
+        }
+
+        Err(ParserError::UnexpectedEof)
+    }
+
     /// Parses a variable declaration from the current position in the token stream.
     /// Must start with a specifier token (e.g., `var`, `let`, `const`).
     pub fn parse_var_decl(
@@ -163,6 +235,10 @@ impl Parser {
 
         // Parse the identifier token
         let name = self.expect(ast, TokenKind::Identifier)?;
+
+        // Mark var decl span
+        let span = self.span_from(start);
+
         // Parse the optional type specification
         let type_expr = if self.accept(ast, TokenKind::Colon).is_some() {
             Some(self.parse_type_expr(ast)?)
@@ -170,16 +246,22 @@ impl Parser {
             None
         };
 
-        // TODO: Handle initializer expressions
-        let initializer = None;
+        // Parse the optional initializer
+        let assign_expr = if self.accept(ast, TokenKind::Eq).is_some() {
+            self.parse_assign_expr(ast)?
+        } else {
+            // Expect terminating semicolon if no assignment.
+            self.expect(ast, TokenKind::Semicolon)?;
+            None
+        };
 
         Ok(
-            ast.add_node_with_data(NodeKind::VarDecl, self.span_from(start), |node_data| {
+            ast.add_node_with_data(NodeKind::VarDecl, span, |node_data| {
                 let var_decl = VarDecl {
                     specifier,
                     name,
                     type_expr,
-                    initializer,
+                    assign_expr,
                 };
                 node_data.add_var_decl(var_decl)
             }),

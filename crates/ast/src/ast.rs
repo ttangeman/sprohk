@@ -147,10 +147,11 @@ impl<'a> Ast<'a> {
                     out.push_str("  data: {\n");
                     out.push_str(&format!("    specifier: {:?}\n", var_decl.specifier));
                     out.push_str(&format!("    name: '{}'\n", name_str));
-                    if let Some(t) = var_decl.type_expr {
-                        let node = self.nodes.get(t as usize);
-                        let type_expr = node.map_or("?".to_string(), |n| n.data_index.to_string());
-                        out.push_str(&format!("    type_expr: {}\n", type_expr));
+                    if let Some(type_index) = var_decl.type_expr {
+                        out.push_str(&format!("    type_expr: {}\n", type_index));
+                    }
+                    if let Some(assign_index) = var_decl.assign_expr {
+                        out.push_str(&format!("    assign_expr: {}\n", assign_index));
                     }
                     out.push_str("  }\n");
                 }
@@ -164,6 +165,21 @@ impl<'a> Ast<'a> {
                             out.push_str("  }\n");
                         }
                     }
+                }
+                NodeKind::AssignExpr => {
+                    let assign_expr = self.node_data.get_assign_expr(*node);
+                    out.push_str("  data: {\n");
+                    match assign_expr {
+                        AssignExpr::Variable(index) => {
+                            let var_str = self.get_src(*index).unwrap_or("");
+                            out.push_str(&format!("    variable: '{}'\n", var_str));
+                        }
+                        AssignExpr::Literal(index) => {
+                            let lit_str = self.get_src(*index).unwrap_or("");
+                            out.push_str(&format!("    literal: '{}'\n", lit_str));
+                        }
+                    }
+                    out.push_str("  }\n");
                 }
             }
             out.push_str("}\n");

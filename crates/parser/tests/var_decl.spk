@@ -1,1 +1,3 @@
-var foo: i32;
+var foo;
+let bar: i32;
+const foobar: i32 = 42;
