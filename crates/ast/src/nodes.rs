@@ -12,6 +12,8 @@ pub enum NodeKind {
 
 pub type NodeIndex = u32;
 
+/// Base node for all AST node types. Can be resolved through
+/// the combination of the `data_index` and `kind`.
 #[derive(Debug, Copy, Clone)]
 pub struct Node {
     // The kind of the node, e.g., variable, function, etc.
@@ -20,6 +22,12 @@ pub struct Node {
     pub data_index: DataIndex,
 }
 
+/// Variable declaration is a statement with an optional type specifier
+/// and assignment expression. Some examples:
+///
+/// `var x;`
+/// `var y: i32;`
+/// `var z: i32 = 42;`
 #[derive(Debug)]
 pub struct VarDecl {
     // The specifier token, e.g., `let`, `const`, `var`.
@@ -34,6 +42,8 @@ pub struct VarDecl {
     pub initializer: Option<NodeIndex>,
 }
 
+/// Represents the possible type expressions linked to a variable declaration
+/// or return statement.
 #[derive(Debug)]
 pub enum TypeExpr {
     /// A simple type expression that refers to a primitive type.
