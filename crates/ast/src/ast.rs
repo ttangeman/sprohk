@@ -104,17 +104,17 @@ impl<'a> Ast<'a> {
     }
 
     /// Retrieves the span of the node at the given index.
-    pub fn get_token_kind(&self, index: usize) -> Option<TokenKind> {
+    pub fn get_token_kind(&self, index: TokenIndex) -> Option<TokenKind> {
         self.tokens.get(index).cloned()
     }
 
     /// Retrieves the source location of the token at the given index.
-    pub fn get_src_loc(&self, index: usize) -> Option<SourceLocation> {
+    pub fn get_src_loc(&self, index: TokenIndex) -> Option<SourceLocation> {
         self.token_locs.get(index).cloned()
     }
 
     /// Retrieves the slice of source code for the given token index.
-    pub fn get_src(&self, index: usize) -> Option<&str> {
+    pub fn get_src(&self, index: TokenIndex) -> Option<&str> {
         if let Some(src) = self
             .token_locs
             .get(index)
