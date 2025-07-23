@@ -50,3 +50,29 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
 
     Ok(ast)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn check_parse_var_decl_errors() {
+        let arena = Bump::new();
+        let sources = vec![
+            "var x = ;",
+            "var x: i32",
+            "var x: i32 = 42 42;",
+            "var x: i32 = a b;",
+        ];
+
+        for source in sources {
+            let result = parse_ast(&arena, source.to_string().into());
+
+            assert!(result.is_err());
+            assert!(matches!(
+                result.err().unwrap(),
+                ParserError::InvalidSyntax(_) | ParserError::UnexpectedToken(_)
+            ));
+        }
+    }
+}
