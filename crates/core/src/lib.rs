@@ -19,23 +19,28 @@ impl SourceFile {
             contents,
         };
 
-        result.hash_file_path();
+        let mut s = DefaultHasher::new();
+        s.write(result.file_path.as_ref().unwrap().as_bytes());
+        result.file_hash = s.finish();
+
         Ok(result)
     }
 
     // Should only be used for testing
     pub fn from_raw_source(source: String) -> Self {
-        SourceFile {
+        let mut result = SourceFile {
             file_path: None,
             file_hash: 0,
             contents: source,
-        }
-    }
+        };
 
-    fn hash_file_path(&mut self) {
+        // Hash at most 64 bytes of the input string
+        let len = std::cmp::min(64, result.contents.len());
         let mut s = DefaultHasher::new();
-        s.write(self.file_path.as_ref().unwrap().as_bytes());
-        self.file_hash = s.finish();
+        s.write(result.contents[0..len].as_bytes());
+        result.file_hash = s.finish();
+
+        result
     }
 
     pub fn source(&self) -> &str {

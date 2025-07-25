@@ -69,7 +69,7 @@ mod test {
             "var x: i32 = 42 42;",
             "var x: i32 = a b;",
         ]
-        .iter_mut()
+        .into_iter()
         .map(|s| SourceFile::from_raw_source(s.to_string()))
         .collect();
 
