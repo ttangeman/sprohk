@@ -1,5 +1,5 @@
 use phf::phf_map;
-use sprohk_core::SourceLocation;
+use sprohk_core::{SourceFile, SourceLocation};
 
 /// List of keywords for the tokenizer.
 /// Uses a compile time perfect hash table for fast lookup.
@@ -130,7 +130,7 @@ impl TokenKind {
 }
 
 /// Represents a token with its kind and source location.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenKind,
     pub loc: SourceLocation,
@@ -138,18 +138,24 @@ pub struct Token {
 
 /// Tokenizes an arbitrary string into a sequence of tokens.
 pub struct Tokenizer<'a> {
+    source_file: &'a SourceFile,
     buf: &'a [u8],
     pos: usize,
     line: usize,
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(buf: &'a str) -> Self {
+    pub fn new(source_file: &'a SourceFile) -> Self {
         Tokenizer {
-            buf: buf.as_bytes(),
+            source_file,
+            buf: source_file.source().as_bytes(),
             pos: 0,
             line: 1,
         }
+    }
+
+    fn loc(&self, line: usize, start: usize, length: usize) -> SourceLocation {
+        SourceLocation::from_source(self.source_file, line, start, length)
     }
 
     fn parse_identifier_or_keyword(&mut self) -> Token {
@@ -168,12 +174,12 @@ impl<'a> Tokenizer<'a> {
         if let Some(keyword) = KEYWORDS.get(identifier) {
             Token {
                 kind: *keyword,
-                loc: SourceLocation::new(line, start, self.pos - start),
+                loc: self.loc(line, start, self.pos - start),
             }
         } else {
             Token {
                 kind: TokenKind::Identifier,
-                loc: SourceLocation::new(line, start, self.pos - start),
+                loc: self.loc(line, start, self.pos - start),
             }
         }
     }
@@ -201,7 +207,7 @@ impl<'a> Tokenizer<'a> {
                                 // If we encounter another decimal point, it's invalid
                                 return Token {
                                     kind: TokenKind::Invalid,
-                                    loc: SourceLocation::new(line, start, self.pos - start),
+                                    loc: self.loc(line, start, self.pos - start),
                                 };
                             }
                             _ => break 'outer,
@@ -232,7 +238,7 @@ impl<'a> Tokenizer<'a> {
 
         Token {
             kind: TokenKind::NumberLiteral,
-            loc: SourceLocation::new(line, start, self.pos - start),
+            loc: self.loc(line, start, self.pos - start),
         }
     }
 
@@ -247,7 +253,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1; // Skip the closing quote
                     return Token {
                         kind: TokenKind::StringLiteral,
-                        loc: SourceLocation::new(line, start, self.pos - start),
+                        loc: self.loc(line, start, self.pos - start),
                     };
                 }
                 _ => {
@@ -258,7 +264,7 @@ impl<'a> Tokenizer<'a> {
 
         Token {
             kind: TokenKind::Invalid,
-            loc: SourceLocation::new(line, start, self.pos - start),
+            loc: self.loc(line, start, self.pos - start),
         }
     }
 
@@ -272,7 +278,7 @@ impl<'a> Tokenizer<'a> {
                 self.pos += 1; // Skip the closing quote
                 return Token {
                     kind: TokenKind::CharLiteral,
-                    loc: SourceLocation::new(line, start, self.pos - start),
+                    loc: self.loc(line, start, self.pos - start),
                 };
             }
             Some(_) => {
@@ -282,14 +288,14 @@ impl<'a> Tokenizer<'a> {
                         self.pos += 1; // Skip the closing quote
                         return Token {
                             kind: TokenKind::CharLiteral,
-                            loc: SourceLocation::new(line, start, self.pos - start),
+                            loc: self.loc(line, start, self.pos - start),
                         };
                     }
                     _ => {
                         // If we reach here, it means we didn't find a valid character literal
                         return Token {
                             kind: TokenKind::Invalid,
-                            loc: SourceLocation::new(line, start, self.pos - start),
+                            loc: self.loc(line, start, self.pos - start),
                         };
                     }
                 }
@@ -299,7 +305,7 @@ impl<'a> Tokenizer<'a> {
                 // treat it as an invalid character literal.
                 return Token {
                     kind: TokenKind::Invalid,
-                    loc: SourceLocation::new(line, start, self.pos - start),
+                    loc: self.loc(line, start, self.pos - start),
                 };
             }
         }
@@ -329,7 +335,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::LBrace,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'}' => {
@@ -338,7 +344,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::RBrace,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'(' => {
@@ -347,7 +353,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::LParen,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b')' => {
@@ -356,7 +362,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::RParen,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'[' => {
@@ -365,7 +371,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::LBracket,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b']' => {
@@ -374,7 +380,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::RBracket,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b';' => {
@@ -383,7 +389,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Semicolon,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b',' => {
@@ -392,7 +398,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Comma,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'!' => {
@@ -401,7 +407,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Not,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'<' => {
@@ -410,7 +416,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Less,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'>' => {
@@ -419,7 +425,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Greater,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'&' => {
@@ -428,7 +434,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::BitwiseAnd,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'|' => {
@@ -437,7 +443,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::BitwiseOr,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'.' => {
@@ -446,7 +452,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Dot,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b':' => {
@@ -455,7 +461,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Colon,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'?' => {
@@ -464,7 +470,7 @@ impl<'a> Tokenizer<'a> {
                     self.pos += 1;
                     return Token {
                         kind: TokenKind::Question,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'+' => {
@@ -475,12 +481,12 @@ impl<'a> Tokenizer<'a> {
                         self.pos += 1;
                         return Token {
                             kind: TokenKind::PlusEq,
-                            loc: SourceLocation::new(line, start, 2),
+                            loc: self.loc(line, start, 2),
                         };
                     }
                     return Token {
                         kind: TokenKind::Plus,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'*' => {
@@ -491,12 +497,12 @@ impl<'a> Tokenizer<'a> {
                         self.pos += 1;
                         return Token {
                             kind: TokenKind::StarEq,
-                            loc: SourceLocation::new(line, start, 2),
+                            loc: self.loc(line, start, 2),
                         };
                     }
                     return Token {
                         kind: TokenKind::Star,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'=' => {
@@ -507,12 +513,12 @@ impl<'a> Tokenizer<'a> {
                         self.pos += 1;
                         return Token {
                             kind: TokenKind::EqEq,
-                            loc: SourceLocation::new(line, start, 2),
+                            loc: self.loc(line, start, 2),
                         };
                     }
                     return Token {
                         kind: TokenKind::Eq,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
                 b'-' => {
@@ -526,7 +532,7 @@ impl<'a> Tokenizer<'a> {
                             self.pos += 1;
                             return Token {
                                 kind: TokenKind::MinusEq,
-                                loc: SourceLocation::new(line, start, 2),
+                                loc: self.loc(line, start, 2),
                             };
                         }
                         // Check for arrow
@@ -534,13 +540,13 @@ impl<'a> Tokenizer<'a> {
                             self.pos += 1;
                             return Token {
                                 kind: TokenKind::Arrow,
-                                loc: SourceLocation::new(line, start, 2),
+                                loc: self.loc(line, start, 2),
                             };
                         }
                         _ => {
                             return Token {
                                 kind: TokenKind::Minus,
-                                loc: SourceLocation::new(line, start, 1),
+                                loc: self.loc(line, start, 1),
                             };
                         }
                     }
@@ -567,14 +573,14 @@ impl<'a> Tokenizer<'a> {
                             self.pos += 1;
                             return Token {
                                 kind: TokenKind::SlashEq,
-                                loc: SourceLocation::new(line, start, 2),
+                                loc: self.loc(line, start, 2),
                             };
                         }
                         // Not a comment, treat as a symbol
                         _ => {
                             return Token {
                                 kind: TokenKind::Slash,
-                                loc: SourceLocation::new(line, start, 1),
+                                loc: self.loc(line, start, 1),
                             };
                         }
                     }
@@ -594,14 +600,14 @@ impl<'a> Tokenizer<'a> {
 
                     return Token {
                         kind: TokenKind::Invalid,
-                        loc: SourceLocation::new(line, start, 1),
+                        loc: self.loc(line, start, 1),
                     };
                 }
             }
         }
         return Token {
             kind: TokenKind::Eof,
-            loc: SourceLocation::new(self.line, self.pos, 0),
+            loc: self.loc(self.line, self.pos, 0),
         };
     }
 }

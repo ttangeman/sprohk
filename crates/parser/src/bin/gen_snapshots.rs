@@ -1,7 +1,9 @@
+use sprohk_core::SourceFile;
 use sprohk_parser::parse_ast;
 
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 
 fn main() {
     let crate_root = env!("CARGO_MANIFEST_DIR");
@@ -15,9 +17,14 @@ fn main() {
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) == Some("spk") {
             // Read and tokenize the source file
-            let source =
-                fs::read_to_string(&path).expect(&format!("Failed to read {}", path.display()));
-            let ast = parse_ast(&arena, source.into()).expect("Failed to parse AST");
+            let source = vec![
+                SourceFile::new(
+                    String::from_str(path.to_str().unwrap()).expect("failed str convert"),
+                )
+                .expect("failed to read file"),
+            ];
+
+            let ast = parse_ast(&arena, source).expect("Failed to parse AST");
 
             // Construct the golden file path and write the snapshot
             // Place the golden file in a "snapshots" subdirectory next to the .spk file

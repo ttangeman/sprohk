@@ -9,6 +9,7 @@ default-run = "sprohk"
 workspace = true
 
 [dependencies]
+sprohk_core = { path = "../core" }
 sprohk_parser = { path = "../parser" }
 
 clap.workspace = true

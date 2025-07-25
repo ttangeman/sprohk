@@ -1,7 +1,7 @@
 use bumpalo::Bump;
 use clap::Parser;
 use sprohk_parser::parse_ast;
-use std::rc::Rc;
+use sprohk_core::SourceFile;
 
 #[derive(Debug, Clone, clap::Subcommand)]
 enum Command {
@@ -21,44 +21,39 @@ enum ExitCode {
     Error,
 }
 
-fn run(source_file: &str) -> ExitCode {
-    match std::fs::read_to_string(source_file) {
-        Ok(source) => {
-            let source = Rc::new(source);
-            let arena = Bump::with_capacity(1 * 1024 * 1024); // 1 MB arena for AST allocation
-            let ast = parse_ast(&arena, source);
-
-            match ast {
-                Ok(_ast) => {
-                    println!("Parsed AST successfully");
-                }
-                Err(e) => {
-                    eprintln!("Error parsing source file '{}': {:?}", source_file, e);
-                    return ExitCode::Error;
-                }
+fn run(source_file_path: String) -> ExitCode {
+    let source_file = {
+        match SourceFile::new(source_file_path) {
+            Ok(source_file) => source_file,
+            Err(err) => {
+                eprintln!("Error reading source file: {}", err.to_string());
+                return ExitCode::Error;
             }
         }
-        Err(e) => match e.kind() {
-            std::io::ErrorKind::NotFound => {
-                eprintln!("Error: Source file '{}' not found.", source_file);
-            }
-            std::io::ErrorKind::IsADirectory => {
-                eprintln!("Error: '{}' is a directory, not a file.", source_file);
-            }
-            _ => {
-                eprintln!("Error reading source file '{}': {}", source_file, e);
-            }
-        },
+    };
+
+    let sources = vec![source_file];
+    let arena = Bump::with_capacity(1 * 1024 * 1024); // 1 MB arena for AST allocation
+    let ast = parse_ast(&arena, sources);
+
+    match ast {
+        Ok(_ast) => {
+            println!("Parsed AST successfully");
+        }
+        Err(e) => {
+            eprintln!("Failed to parse source: {:?}", e);
+            return ExitCode::Error;
+        }
     }
 
-    ExitCode::Error
+    ExitCode::Success
 }
 
 fn main() {
     let args = Args::parse();
 
     let exit_code = match args.command {
-        Command::Run { source_file } => run(&source_file),
+        Command::Run { source_file } => run(source_file),
     };
 
     std::process::exit(match exit_code {

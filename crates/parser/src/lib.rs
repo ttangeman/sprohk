@@ -4,32 +4,37 @@ pub use parser::{Parser, ParserError};
 
 use bumpalo::Bump;
 use sprohk_ast::Ast;
+use sprohk_core::SourceFile;
 use sprohk_lexer::{TokenKind, Tokenizer};
-use std::rc::Rc;
 
-pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, ParserError> {
-    let mut ast = Ast::new(arena, source.clone());
+pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a>, ParserError> {
+    let mut ast = Ast::new(arena);
+    let source_len: usize = sources.iter().map(|s| s.source().len()).sum();
+
     // Reserve space for tokens based on the source length (best guess).
-    ast.reserve_tokens(ast.source().len() / 8);
+    ast.reserve_tokens(source_len / 8);
 
-    let mut tokenizer = Tokenizer::new(&source);
-
-    // Tokenize the source code and add tokens to the AST.
-    loop {
-        let token = tokenizer.next();
-        match token.kind {
-            TokenKind::Invalid => {
-                return Err(ParserError::InvalidSyntax(format!(
-                    "Invalid token {:?} at {}:{}",
-                    token.kind, token.loc.line, token.loc.start
-                )));
+    for source in sources {
+        let mut tokenizer = Tokenizer::new(&source);
+        // Tokenize the source code and add tokens to the AST.
+        loop {
+            let token = tokenizer.next();
+            match token.kind {
+                TokenKind::Invalid => {
+                    return Err(ParserError::InvalidSyntax(format!(
+                        "Invalid token {:?} at {}:{}",
+                        token.kind, token.loc.line, token.loc.start
+                    )));
+                }
+                TokenKind::Eof => {
+                    ast.add_token(token);
+                    break;
+                }
+                _ => ast.add_token(token),
             }
-            TokenKind::Eof => {
-                ast.add_token(token);
-                break;
-            }
-            _ => ast.add_token(token),
         }
+
+        ast.add_module(source);
     }
 
     // Reserve space for nodes based on the number of tokens (best guess)
@@ -37,14 +42,14 @@ pub fn parse_ast<'a>(arena: &'a Bump, source: Rc<String>) -> Result<Ast<'a>, Par
 
     // Begin parsing the tokens into AST nodes.
     let mut parser = Parser::new();
-    while let Some(token) = ast.get_token_kind(parser.at()) {
-        match token {
+    while let Some(token) = ast.get_token(parser.at()) {
+        match token.kind {
             TokenKind::Var | TokenKind::Let | TokenKind::Const => {
-                parser.parse_var_decl(&mut ast, token)?;
+                parser.parse_var_decl(&mut ast, token.kind)?;
             }
 
             TokenKind::Eof => break,
-            _ => return Err(ParserError::UnexpectedToken(token)),
+            _ => return Err(ParserError::UnexpectedToken(token.kind)),
         }
     }
 
@@ -63,16 +68,17 @@ mod test {
             "var x: i32",
             "var x: i32 = 42 42;",
             "var x: i32 = a b;",
-        ];
+        ]
+        .iter_mut()
+        .map(|s| SourceFile::from_raw_source(s.to_string()))
+        .collect();
 
-        for source in sources {
-            let result = parse_ast(&arena, source.to_string().into());
+        let result = parse_ast(&arena, sources);
 
-            assert!(result.is_err());
-            assert!(matches!(
-                result.err().unwrap(),
-                ParserError::InvalidSyntax(_) | ParserError::UnexpectedToken(_)
-            ));
-        }
+        assert!(result.is_err());
+        assert!(matches!(
+            result.err().unwrap(),
+            ParserError::InvalidSyntax(_) | ParserError::UnexpectedToken(_)
+        ));
     }
 }
