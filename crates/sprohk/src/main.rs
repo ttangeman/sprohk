@@ -1,7 +1,7 @@
 use bumpalo::Bump;
 use clap::Parser;
-use sprohk_parser::parse_ast;
 use sprohk_core::SourceFile;
+use sprohk_parser::parse_ast;
 
 #[derive(Debug, Clone, clap::Subcommand)]
 enum Command {

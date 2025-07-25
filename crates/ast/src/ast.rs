@@ -3,7 +3,7 @@ use crate::{module::Module, node_data::*, nodes::*};
 use bumpalo::{Bump, collections::Vec as BumpVec};
 use sprohk_core::{SourceFile, Span};
 use sprohk_lexer::{Token, TokenKind};
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 /// Represents the index of a token in the AST.
 /// Maps to primarily the token kind and its source location as
@@ -113,10 +113,7 @@ impl<'a> Ast<'a> {
     /// Retrieves the slice of source code for the given token index.
     pub fn get_src(&self, index: TokenIndex) -> Option<&str> {
         if let Some(src) = self.tokens.get(index).and_then(|tok| {
-            let module = self
-                .modules
-                .get(&tok.loc.source_hash)
-                .unwrap();
+            let module = self.modules.get(&tok.loc.source_hash).unwrap();
             module.source_text().get(tok.loc.start..tok.loc.end)
         }) {
             Some(src)

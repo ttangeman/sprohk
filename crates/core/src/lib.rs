@@ -28,7 +28,7 @@ impl SourceFile {
         SourceFile {
             file_path: None,
             file_hash: 0,
-            contents: source
+            contents: source,
         }
     }
 
