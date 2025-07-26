@@ -52,8 +52,8 @@ pub struct VarDecl {
 
 /// Represents a type expression for assigning a type, which is
 /// either statically or dynamically resolved potentially, to a
-/// typed declaration (e.g., a variable declaration, return type, or 
-/// function argument). 
+/// typed declaration (e.g., a variable declaration, return type, or
+/// function argument).
 #[derive(Debug)]
 pub enum TypeExpr {
     /// A simple type expression that refers to a primitive type.
@@ -63,8 +63,7 @@ pub enum TypeExpr {
     TypeName {
         name: TokenIndex,
         // TODO: specifier, references, etc.
-    }
-    // TODO: More complicated compile time expressions
+    }, // TODO: More complicated compile time expressions
 }
 
 /// Special case assignment expression for variable declarations.
@@ -81,16 +80,16 @@ pub enum AssignExpr {
 pub struct FnPrototype {
     // The index of the function name in the source code.
     pub name: TokenIndex,
-    // Index to the optional return `TypeExpr` 
+    // Index to the optional return `TypeExpr`
     pub ret_type_expr: Option<NodeIndex>,
 
-    // Indices to each `FunctionParameter` in the argument list. 
+    // Indices to each `FunctionParameter` in the argument list.
     // Uses SBO for at least 8 parameters, as it is uncommon for
     // functions to exceed that.
     pub parameters: SmallVec<[NodeIndex; 8]>,
 }
 
-/// Function parameter for a function prototype 
+/// Function parameter for a function prototype
 pub struct FnParameter {
     // The index of the variable name in the source code.
     pub name: TokenIndex,

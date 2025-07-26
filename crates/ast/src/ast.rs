@@ -50,6 +50,12 @@ impl<'a> Ast<'a> {
         self.modules.insert(source.file_hash(), Module::new(source));
     }
 
+    /// Adds a node to the module root list for traversal
+    pub fn add_to_module_root(&mut self, token: Token, node_index: NodeIndex) {
+        let module = self.modules.get_mut(&token.loc.source_hash).unwrap();
+        module.add_root_node(node_index);
+    }
+
     /// Adds lexical tokens to the module. Note that this
     /// does not perform any semantic analysis or validation.
     pub fn add_token(&mut self, token: Token) {
@@ -110,10 +116,15 @@ impl<'a> Ast<'a> {
         self.get_token(index).map(|t| t.kind)
     }
 
+    /// Lookups the module from a token's source location
+    pub fn get_module(&self, token: &Token) -> Option<&Module> {
+        self.modules.get(&token.loc.source_hash)
+    }
+
     /// Retrieves the slice of source code for the given token index.
     pub fn get_src(&self, index: TokenIndex) -> Option<&str> {
         if let Some(src) = self.tokens.get(index).and_then(|tok| {
-            let module = self.modules.get(&tok.loc.source_hash).unwrap();
+            let module = self.get_module(tok).unwrap();
             module.source_text().get(tok.loc.start..tok.loc.end)
         }) {
             Some(src)
@@ -177,7 +188,7 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
-                
+
                 _ => {
                     out.push_str("  data: ?\n");
                 }

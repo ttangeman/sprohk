@@ -45,7 +45,8 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
     while let Some(token) = ast.get_token(parser.at()) {
         match token.kind {
             TokenKind::Var | TokenKind::Let | TokenKind::Const => {
-                parser.parse_var_decl(&mut ast, token.kind)?;
+                let node_index = parser.parse_var_decl(&mut ast, token.kind)?;
+                ast.add_to_module_root(token, node_index);
             }
 
             TokenKind::Eof => break,

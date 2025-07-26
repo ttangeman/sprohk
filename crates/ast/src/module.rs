@@ -21,4 +21,8 @@ impl Module {
     pub fn source_text(&self) -> &str {
         &self.source.source()
     }
+
+    pub fn add_root_node(&mut self, node_index: NodeIndex) {
+        self.root_nodes.push(node_index);
+    }
 }
