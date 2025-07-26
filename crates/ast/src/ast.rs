@@ -177,6 +177,10 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                
+                _ => {
+                    out.push_str("  data: ?\n");
+                }
             }
             out.push_str("}\n");
         }

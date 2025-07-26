@@ -9,6 +9,7 @@ workspace = true
 
 [dependencies]
 bumpalo.workspace = true
+smallvec.workspace = true
 
 sprohk_core = { path = "../core" }
 sprohk_lexer = { path = "../lexer" }
