@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    AssignExpr, Ast, FnPrototype, Function, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl
+    AssignExpr, Ast, FnPrototype, Function, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -284,7 +284,7 @@ impl Parser {
 
     pub fn parse_function(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.at();
-        
+
         // Parse function prototype
         let proto_index = self.parse_func_prototype(ast)?;
 
@@ -301,7 +301,7 @@ impl Parser {
                             prototype: proto_index,
                         };
                         node_data.add_function(func)
-                    })
+                    }),
                 )
             }
             Some(TokenKind::LBracket) => {

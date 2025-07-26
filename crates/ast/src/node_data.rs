@@ -73,4 +73,14 @@ impl NodeData {
         assert_eq!(node.kind, NodeKind::AssignExpr);
         &self.assign_exprs[node.data_index as usize]
     }
+
+    pub fn get_function(&self, node: Node) -> &Function {
+        assert_eq!(node.kind, NodeKind::Function);
+        &self.functions[node.data_index as usize]
+    }
+
+    pub fn get_fn_prototype(&self, node: Node) -> &FnPrototype {
+        assert_eq!(node.kind, NodeKind::FnPrototype);
+        &self.fn_protos[node.data_index as usize]
+    }
 }

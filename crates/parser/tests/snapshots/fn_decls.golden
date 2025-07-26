@@ -1,0 +1,36 @@
+node 0 {
+  kind: FnPrototype
+  tokens: [0..4]
+  data: {
+    name: foo
+  }
+}
+node 1 {
+  kind: Function
+  tokens: [0..4]
+  data: {
+    prototype: 0
+  }
+}
+node 2 {
+  kind: TypeExpr
+  tokens: [10..11]
+  data: {
+    root: 'i32'
+  }
+}
+node 3 {
+  kind: FnPrototype
+  tokens: [5..9]
+  data: {
+    name: bar
+    ret_type_expr: 2
+  }
+}
+node 4 {
+  kind: Function
+  tokens: [5..11]
+  data: {
+    prototype: 3
+  }
+}

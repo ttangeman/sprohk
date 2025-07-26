@@ -188,6 +188,22 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                NodeKind::Function => {
+                    let func = self.node_data.get_function(*node);
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    prototype: {}\n", func.prototype));
+                    out.push_str("  }\n");
+                }
+                NodeKind::FnPrototype => {
+                    let fn_proto = self.node_data.get_fn_prototype(*node);
+                    let name_str = self.get_src(fn_proto.name).unwrap_or("");
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    name: {}\n", name_str));
+                    if let Some(type_index) = fn_proto.ret_type_expr {
+                        out.push_str(&format!("    ret_type_expr: {}\n", type_index));
+                    }
+                    out.push_str("  }\n");
+                }
 
                 _ => {
                     out.push_str("  data: ?\n");
