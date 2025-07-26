@@ -11,6 +11,7 @@ pub enum NodeKind {
     TypeExpr,
     AssignExpr,
 
+    Function,
     FnPrototype,
     FnParameter,
 }
@@ -73,6 +74,12 @@ pub enum AssignExpr {
     Variable(TokenIndex),
     // Simple literal assignment with token index to literal value
     Literal(TokenIndex),
+}
+
+#[derive(Debug)]
+pub struct Function {
+    pub prototype: NodeIndex,
+    // TODO: function block
 }
 
 /// Function prototype is all of the expressions and metadata associated

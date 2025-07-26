@@ -44,13 +44,15 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
     let mut parser = Parser::new();
     while let Some(token) = ast.get_token(parser.at()) {
         match token.kind {
+            // Global variable
             TokenKind::Var | TokenKind::Let | TokenKind::Const => {
                 let node_index = parser.parse_var_decl(&mut ast, token.kind)?;
                 ast.add_to_module_root(token, node_index);
             }
 
+            // Top-level function
             TokenKind::Fn => {
-                let node_index = parser.parse_func_prototype(&mut ast)?;
+                let node_index = parser.parse_function(&mut ast)?;
                 ast.add_to_module_root(token, node_index);
             }
 

@@ -10,6 +10,7 @@ pub struct NodeData {
     var_decls: Vec<VarDecl>,
     type_exprs: Vec<TypeExpr>,
     assign_exprs: Vec<AssignExpr>,
+    functions: Vec<Function>,
     fn_protos: Vec<FnPrototype>,
 }
 
@@ -23,6 +24,7 @@ impl NodeData {
             var_decls: Vec::new(),
             type_exprs: Vec::new(),
             assign_exprs: Vec::new(),
+            functions: Vec::new(),
             fn_protos: Vec::new(),
         }
     }
@@ -42,6 +44,12 @@ impl NodeData {
     pub fn add_assign_expr(&mut self, assign_expr: AssignExpr) -> DataIndex {
         let index = self.assign_exprs.len() as DataIndex;
         self.assign_exprs.push(assign_expr);
+        index
+    }
+
+    pub fn add_function(&mut self, func: Function) -> DataIndex {
+        let index = self.functions.len() as DataIndex;
+        self.functions.push(func);
         index
     }
 

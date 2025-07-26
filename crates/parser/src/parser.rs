@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    AssignExpr, Ast, FnPrototype, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl,
+    AssignExpr, Ast, FnPrototype, Function, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -282,8 +282,39 @@ impl Parser {
         }
     }
 
+    pub fn parse_function(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.at();
+        
+        // Parse function prototype
+        let proto_index = self.parse_func_prototype(ast)?;
+
+        // Try to parse block or terminate
+        match ast.get_token_kind(self.at()) {
+            Some(TokenKind::Semicolon) => {
+                let span = self.span_from(start);
+                // Terminate the function parsing
+                self.advance();
+
+                Ok(
+                    ast.add_node_with_data(NodeKind::Function, span, |node_data| {
+                        let func = Function {
+                            prototype: proto_index,
+                        };
+                        node_data.add_function(func)
+                    })
+                )
+            }
+            Some(TokenKind::LBracket) => {
+                // Parse block
+                todo!()
+            }
+            Some(kind) => return Err(ParserError::UnexpectedToken(kind)),
+            None => return Err(ParserError::UnexpectedEof),
+        }
+    }
+
     /// Parses a function prototype alongside the parameter list and return type expr.
-    /// The block should be parsed separately.
+    /// The block or terminating semicolon should be parsed separately.
     pub fn parse_func_prototype(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.at();
         // Move past the `Fn` token
@@ -299,6 +330,7 @@ impl Parser {
         if self.accept(ast, TokenKind::RParen).is_some() {
             // Mark fn span
             let span = self.span_from(start);
+            // Parse option return type expr
             let ret_type_expr = self.parse_return_type_expr(ast)?;
 
             Ok(
