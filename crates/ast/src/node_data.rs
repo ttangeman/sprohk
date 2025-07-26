@@ -10,6 +10,7 @@ pub struct NodeData {
     var_decls: Vec<VarDecl>,
     type_exprs: Vec<TypeExpr>,
     assign_exprs: Vec<AssignExpr>,
+    fn_protos: Vec<FnPrototype>,
 }
 
 // Note on getters: runtime checking of the `NodeKind` is maintained for the node data to
@@ -22,6 +23,7 @@ impl NodeData {
             var_decls: Vec::new(),
             type_exprs: Vec::new(),
             assign_exprs: Vec::new(),
+            fn_protos: Vec::new(),
         }
     }
 
@@ -40,6 +42,12 @@ impl NodeData {
     pub fn add_assign_expr(&mut self, assign_expr: AssignExpr) -> DataIndex {
         let index = self.assign_exprs.len() as DataIndex;
         self.assign_exprs.push(assign_expr);
+        index
+    }
+
+    pub fn add_fn_prototype(&mut self, fn_proto: FnPrototype) -> DataIndex {
+        let index = self.fn_protos.len() as DataIndex;
+        self.fn_protos.push(fn_proto);
         index
     }
 

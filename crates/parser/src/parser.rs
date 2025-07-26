@@ -1,4 +1,7 @@
-use sprohk_ast::{AssignExpr, Ast, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl};
+use smallvec::SmallVec;
+use sprohk_ast::{
+    AssignExpr, Ast, FnPrototype, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl,
+};
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
 
@@ -266,5 +269,50 @@ impl Parser {
                 node_data.add_var_decl(var_decl)
             }),
         )
+    }
+
+    pub fn parse_return_type_expr(
+        &mut self,
+        ast: &mut Ast,
+    ) -> Result<Option<NodeIndex>, ParserError> {
+        if self.accept(ast, TokenKind::Arrow).is_some() {
+            Ok(Some(self.parse_type_expr(ast)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Parses a function prototype alongside the parameter list and return type expr.
+    /// The block should be parsed separately.
+    pub fn parse_func_prototype(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.at();
+        // Move past the `Fn` token
+        self.advance();
+
+        // Parse the identifier token
+        let name = self.expect(ast, TokenKind::Identifier)?;
+
+        // Parse parameters
+        self.expect(ast, TokenKind::LParen)?;
+
+        // Parse empty parameter list or arguments if non-terminated by ')'
+        if self.accept(ast, TokenKind::RParen).is_some() {
+            // Mark fn span
+            let span = self.span_from(start);
+            let ret_type_expr = self.parse_return_type_expr(ast)?;
+
+            Ok(
+                ast.add_node_with_data(NodeKind::FnPrototype, span, |node_data| {
+                    let fn_proto = FnPrototype {
+                        name,
+                        ret_type_expr,
+                        parameters: SmallVec::new(),
+                    };
+                    node_data.add_fn_prototype(fn_proto)
+                }),
+            )
+        } else {
+            todo!()
+        }
     }
 }

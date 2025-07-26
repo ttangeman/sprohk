@@ -40,12 +40,17 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
     // Reserve space for nodes based on the number of tokens (best guess)
     ast.reserve_nodes();
 
-    // Begin parsing the tokens into AST nodes.
+    // Begin parsing the tokens into AST nodes from the root set of nodes.
     let mut parser = Parser::new();
     while let Some(token) = ast.get_token(parser.at()) {
         match token.kind {
             TokenKind::Var | TokenKind::Let | TokenKind::Const => {
                 let node_index = parser.parse_var_decl(&mut ast, token.kind)?;
+                ast.add_to_module_root(token, node_index);
+            }
+
+            TokenKind::Fn => {
+                let node_index = parser.parse_func_prototype(&mut ast)?;
                 ast.add_to_module_root(token, node_index);
             }
 

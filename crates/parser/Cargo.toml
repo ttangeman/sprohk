@@ -13,6 +13,7 @@ sprohk_core = { path = "../core" }
 sprohk_lexer = { path = "../lexer" }
 
 bumpalo.workspace = true
+smallvec.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true

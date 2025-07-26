@@ -77,6 +77,7 @@ pub enum AssignExpr {
 
 /// Function prototype is all of the expressions and metadata associated
 /// with the call definition for a function declaration.
+#[derive(Debug)]
 pub struct FnPrototype {
     // The index of the function name in the source code.
     pub name: TokenIndex,
@@ -90,6 +91,7 @@ pub struct FnPrototype {
 }
 
 /// Function parameter for a function prototype
+#[derive(Debug)]
 pub struct FnParameter {
     // The index of the variable name in the source code.
     pub name: TokenIndex,
