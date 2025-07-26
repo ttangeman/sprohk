@@ -51,7 +51,10 @@ pub enum TypeExpr {
     Primitive(TokenIndex),
     /// A type expression that refers to a non-ambiguous (i.e. no compile
     /// time expression or procedure) type name.
-    TypeName(TokenIndex),
+    TypeName {
+        name: TokenIndex,
+        // TODO: specifier, references, etc.
+    }
     // TODO: More complicated compile time expressions
 }
 

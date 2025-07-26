@@ -133,7 +133,9 @@ impl Parser {
                 let type_expr = if is_primitive {
                     TypeExpr::Primitive(type_index)
                 } else {
-                    TypeExpr::TypeName(type_index)
+                    TypeExpr::TypeName {
+                        name: type_index
+                    }
                 };
                 node_data.add_type_expr(type_expr)
             },

@@ -154,7 +154,7 @@ impl<'a> Ast<'a> {
                 NodeKind::TypeExpr => {
                     let type_expr = self.node_data.get_type_expr(*node);
                     match *type_expr {
-                        TypeExpr::Primitive(index) | TypeExpr::TypeName(index) => {
+                        TypeExpr::Primitive(index) | TypeExpr::TypeName { name: index } => {
                             let root_str = self.get_src(index).unwrap_or("");
                             out.push_str("  data: {\n");
                             out.push_str(&format!("    root: '{}'\n", root_str));
