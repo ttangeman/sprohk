@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    AssignExpr, Ast, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex, NodeKind,
-    TokenIndex, TypeExpr, VarDecl,
+    AssignExpr, Ast, Block, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex,
+    NodeKind, StatementList, TokenIndex, TypeExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -215,6 +215,50 @@ impl Parser {
 
                 TokenKind::Eof => return Err(ParserError::UnexpectedEof),
                 _ => return Err(ParserError::UnexpectedToken(token)),
+            }
+        }
+
+        Err(ParserError::UnexpectedEof)
+    }
+
+    pub fn parse_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        _ = ast;
+        todo!()
+    }
+
+    /// Parse a block of code for a function, a statement, or for introducing
+    /// a new scope in valid contexts. Assumes that the opening brace has already
+    /// been seen, but _not_ consumed by caller. 
+    pub fn parse_block(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.at();
+
+        // Assert contract with open brace
+        debug_assert!(ast.get_token_kind(start) == Some(TokenKind::LBrace));
+        // Advance past open brace
+        self.advance();
+
+        let mut statements = StatementList::new();
+
+        while let Some(kind) = ast.get_token_kind(self.at()) {
+            match kind {
+                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
+                TokenKind::RBrace => {
+                    // Consume terminating token
+                    self.advance();
+
+                    return Ok(ast.add_node_with_data(
+                        NodeKind::Block,
+                        self.span_from(start),
+                        |node_data| {
+                            let block = Block { statements };
+                            node_data.add_block(block)
+                        },
+                    ));
+                }
+                _ => {
+                    let statement = self.parse_statement(ast)?;
+                    statements.push(statement);
+                }
             }
         }
 

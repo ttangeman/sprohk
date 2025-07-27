@@ -7,6 +7,8 @@ use sprohk_lexer::TokenKind;
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum NodeKind {
+    Block,
+
     VarDecl,
     TypeExpr,
     AssignExpr,
@@ -26,6 +28,21 @@ pub struct Node {
     pub kind: NodeKind,
     // The index to the derived node data.
     pub data_index: DataIndex,
+}
+
+// TODO: Would arena allocation be better suited?
+pub type StatementList = SmallVec<[NodeIndex; 12]>;
+
+/// Generic node representing a block of code for a function,
+/// statement, or creating a new scope. The block derives a list of
+/// statements that can be provided semantic meaning through the node
+/// that associates it as a child node.
+#[derive(Debug)]
+pub struct Block {
+    // List of statements in the block. Uses SBO for at least 12
+    // statements, as this gives good leeway to prevent allocation
+    // and the whole list can fit in a single cache line.
+    pub statements: StatementList,
 }
 
 /// Variable declaration is a statement with an optional type specifier
@@ -79,9 +96,9 @@ pub enum AssignExpr {
 #[derive(Debug)]
 pub struct Function {
     pub prototype: NodeIndex,
-    // TODO: function block
 }
 
+// TODO: Would arena allocation be better suited?
 pub type FnParameterList = SmallVec<[NodeIndex; 8]>;
 
 /// Function prototype is all of the expressions and metadata associated

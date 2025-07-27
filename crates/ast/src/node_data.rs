@@ -7,6 +7,7 @@ pub type DataIndex = u32;
 /// AST information, due to the higher density of data that is encoded.
 #[derive(Debug)]
 pub struct NodeData {
+    blocks: Vec<Block>,
     var_decls: Vec<VarDecl>,
     type_exprs: Vec<TypeExpr>,
     assign_exprs: Vec<AssignExpr>,
@@ -22,6 +23,7 @@ pub struct NodeData {
 impl NodeData {
     pub fn new() -> NodeData {
         NodeData {
+            blocks: Vec::new(),
             var_decls: Vec::new(),
             type_exprs: Vec::new(),
             assign_exprs: Vec::new(),
@@ -29,6 +31,12 @@ impl NodeData {
             fn_protos: Vec::new(),
             fn_params: Vec::new(),
         }
+    }
+
+    pub fn add_block(&mut self, block: Block) -> DataIndex {
+        let index = self.blocks.len() as DataIndex;
+        self.blocks.push(block);
+        index
     }
 
     pub fn add_var_decl(&mut self, decl: VarDecl) -> DataIndex {
@@ -65,6 +73,11 @@ impl NodeData {
         let index = self.fn_params.len() as DataIndex;
         self.fn_params.push(fn_param);
         index
+    }
+
+    pub fn get_block(&self, node: Node) -> &Block {
+        assert_eq!(node.kind, NodeKind::Block);
+        &self.blocks[node.data_index as usize]
     }
 
     pub fn get_var_decl(&self, node: Node) -> &VarDecl {

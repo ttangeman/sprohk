@@ -41,6 +41,9 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
     ast.reserve_nodes();
 
     // Begin parsing the tokens into AST nodes from the root set of nodes.
+    //
+    // Note that this is deliberately separated from statement parsing to
+    // handle the different semantics that might apply at global scope.
     let mut parser = Parser::new();
     while let Some(token) = ast.get_token(parser.at()) {
         match token.kind {
