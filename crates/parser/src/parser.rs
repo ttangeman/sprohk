@@ -1,6 +1,7 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    AssignExpr, Ast, FnPrototype, Function, NodeIndex, NodeKind, TokenIndex, TypeExpr, VarDecl,
+    AssignExpr, Ast, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex, NodeKind,
+    TokenIndex, TypeExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -239,9 +240,6 @@ impl Parser {
         // Parse the identifier token
         let name = self.expect(ast, TokenKind::Identifier)?;
 
-        // Mark var decl span
-        let span = self.span_from(start);
-
         // Parse the optional type specification
         let type_expr = if self.accept(ast, TokenKind::Colon).is_some() {
             Some(self.parse_type_expr(ast)?)
@@ -259,7 +257,7 @@ impl Parser {
         };
 
         Ok(
-            ast.add_node_with_data(NodeKind::VarDecl, span, |node_data| {
+            ast.add_node_with_data(NodeKind::VarDecl, self.span_from(start), |node_data| {
                 let var_decl = VarDecl {
                     specifier,
                     name,
@@ -271,6 +269,7 @@ impl Parser {
         )
     }
 
+    /// Parses a return type expression for a function declaration.
     pub fn parse_return_type_expr(
         &mut self,
         ast: &mut Ast,
@@ -282,6 +281,8 @@ impl Parser {
         }
     }
 
+    /// Parses a function declaration and body. Designed to work at arbitrary scope level,
+    /// but most likely global scope.
     pub fn parse_function(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.at();
 
@@ -326,15 +327,14 @@ impl Parser {
         // Parse parameters
         self.expect(ast, TokenKind::LParen)?;
 
-        // Parse empty parameter list or arguments if non-terminated by ')'
+        // Parse empty parameter list, if it is not immediately
+        // terminated by a ')' after the opening '(', or the parameters
         if self.accept(ast, TokenKind::RParen).is_some() {
-            // Mark fn span
-            let span = self.span_from(start);
-            // Parse option return type expr
+            // Parse optional return type expr
             let ret_type_expr = self.parse_return_type_expr(ast)?;
 
             Ok(
-                ast.add_node_with_data(NodeKind::FnPrototype, span, |node_data| {
+                ast.add_node_with_data(NodeKind::FnPrototype, self.span_from(start), |node_data| {
                     let fn_proto = FnPrototype {
                         name,
                         ret_type_expr,
@@ -344,7 +344,62 @@ impl Parser {
                 }),
             )
         } else {
-            todo!()
+            let mut parameters = FnParameterList::new();
+
+            // Parse function parameters until terminating ')'
+            'params: loop {
+                let param_index = self.parse_fn_parameter(ast)?;
+                parameters.push(param_index);
+
+                match ast.get_token_kind(self.at()) {
+                    // Continue parsing parameters
+                    Some(TokenKind::Comma) => {
+                        self.advance();
+                        continue 'params;
+                    }
+                    // Terminate parsing parameters
+                    Some(TokenKind::RParen) => {
+                        self.advance();
+                        break 'params;
+                    }
+
+                    None => return Err(ParserError::UnexpectedEof),
+                    Some(kind) => return Err(ParserError::UnexpectedToken(kind)),
+                }
+            }
+
+            // Parse optional return type expr
+            let ret_type_expr = self.parse_return_type_expr(ast)?;
+
+            Ok(
+                ast.add_node_with_data(NodeKind::FnPrototype, self.span_from(start), |node_data| {
+                    let fn_proto = FnPrototype {
+                        name,
+                        ret_type_expr,
+                        parameters,
+                    };
+                    node_data.add_fn_prototype(fn_proto)
+                }),
+            )
         }
+    }
+
+    /// Parses a function parameter inside of a implicit parameter list handled by the caller.
+    pub fn parse_fn_parameter(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.at();
+
+        // Parse the identifier token
+        let name = self.expect(ast, TokenKind::Identifier)?;
+        // Parse the colon
+        self.expect(ast, TokenKind::Colon)?;
+        // Parse the type expr
+        let type_expr = self.parse_type_expr(ast)?;
+
+        Ok(
+            ast.add_node_with_data(NodeKind::FnParameter, self.span_from(start), |node_data| {
+                let fn_param = FnParameter { name, type_expr };
+                node_data.add_fn_parameter(fn_param)
+            }),
+        )
     }
 }

@@ -12,6 +12,7 @@ pub struct NodeData {
     assign_exprs: Vec<AssignExpr>,
     functions: Vec<Function>,
     fn_protos: Vec<FnPrototype>,
+    fn_params: Vec<FnParameter>,
 }
 
 // Note on getters: runtime checking of the `NodeKind` is maintained for the node data to
@@ -26,6 +27,7 @@ impl NodeData {
             assign_exprs: Vec::new(),
             functions: Vec::new(),
             fn_protos: Vec::new(),
+            fn_params: Vec::new(),
         }
     }
 
@@ -59,6 +61,12 @@ impl NodeData {
         index
     }
 
+    pub fn add_fn_parameter(&mut self, fn_param: FnParameter) -> DataIndex {
+        let index = self.fn_params.len() as DataIndex;
+        self.fn_params.push(fn_param);
+        index
+    }
+
     pub fn get_var_decl(&self, node: Node) -> &VarDecl {
         assert_eq!(node.kind, NodeKind::VarDecl);
         &self.var_decls[node.data_index as usize]
@@ -82,5 +90,10 @@ impl NodeData {
     pub fn get_fn_prototype(&self, node: Node) -> &FnPrototype {
         assert_eq!(node.kind, NodeKind::FnPrototype);
         &self.fn_protos[node.data_index as usize]
+    }
+
+    pub fn get_fn_parameter(&self, node: Node) -> &FnParameter {
+        assert_eq!(node.kind, NodeKind::FnParameter);
+        &self.fn_params[node.data_index as usize]
     }
 }

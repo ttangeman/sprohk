@@ -1,2 +1,4 @@
 fn foo();
 fn bar() -> i32;
+fn x(a: i32, b: f32) -> f32;
+fn y(a: i32);

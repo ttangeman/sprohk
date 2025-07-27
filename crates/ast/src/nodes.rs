@@ -82,6 +82,8 @@ pub struct Function {
     // TODO: function block
 }
 
+pub type FnParameterList = SmallVec<[NodeIndex; 8]>;
+
 /// Function prototype is all of the expressions and metadata associated
 /// with the call definition for a function declaration.
 #[derive(Debug)]
@@ -94,7 +96,7 @@ pub struct FnPrototype {
     // Indices to each `FunctionParameter` in the argument list.
     // Uses SBO for at least 8 parameters, as it is uncommon for
     // functions to exceed that.
-    pub parameters: SmallVec<[NodeIndex; 8]>,
+    pub parameters: FnParameterList,
 }
 
 /// Function parameter for a function prototype

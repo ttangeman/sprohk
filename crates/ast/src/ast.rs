@@ -204,7 +204,17 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                NodeKind::FnParameter => {
+                    let fn_param = self.node_data.get_fn_parameter(*node);
+                    let name_str = self.get_src(fn_param.name).unwrap_or("");
+                    let type_index = fn_param.type_expr;
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    name: {}\n", name_str));
+                    out.push_str(&format!("    type_expr: {}\n", type_index));
+                    out.push_str("  }\n");
+                }
 
+                #[allow(unreachable_patterns)]
                 _ => {
                     out.push_str("  data: ?\n");
                 }

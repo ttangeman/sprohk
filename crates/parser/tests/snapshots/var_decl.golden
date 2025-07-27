@@ -1,6 +1,6 @@
 node 0 {
   kind: VarDecl
-  tokens: [0..2]
+  tokens: [0..3]
   data: {
     specifier: Var
     name: 'foo'
@@ -15,7 +15,7 @@ node 1 {
 }
 node 2 {
   kind: VarDecl
-  tokens: [3..5]
+  tokens: [3..8]
   data: {
     specifier: Let
     name: 'bar'
@@ -38,7 +38,7 @@ node 4 {
 }
 node 5 {
   kind: VarDecl
-  tokens: [8..10]
+  tokens: [8..15]
   data: {
     specifier: Const
     name: 'foobar'

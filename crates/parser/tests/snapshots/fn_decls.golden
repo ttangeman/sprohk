@@ -21,7 +21,7 @@ node 2 {
 }
 node 3 {
   kind: FnPrototype
-  tokens: [5..9]
+  tokens: [5..11]
   data: {
     name: bar
     ret_type_expr: 2
@@ -32,5 +32,86 @@ node 4 {
   tokens: [5..11]
   data: {
     prototype: 3
+  }
+}
+node 5 {
+  kind: TypeExpr
+  tokens: [17..18]
+  data: {
+    root: 'i32'
+  }
+}
+node 6 {
+  kind: FnParameter
+  tokens: [15..18]
+  data: {
+    name: a
+    type_expr: 5
+  }
+}
+node 7 {
+  kind: TypeExpr
+  tokens: [21..22]
+  data: {
+    root: 'f32'
+  }
+}
+node 8 {
+  kind: FnParameter
+  tokens: [19..22]
+  data: {
+    name: b
+    type_expr: 7
+  }
+}
+node 9 {
+  kind: TypeExpr
+  tokens: [24..25]
+  data: {
+    root: 'f32'
+  }
+}
+node 10 {
+  kind: FnPrototype
+  tokens: [12..25]
+  data: {
+    name: x
+    ret_type_expr: 9
+  }
+}
+node 11 {
+  kind: Function
+  tokens: [12..25]
+  data: {
+    prototype: 10
+  }
+}
+node 12 {
+  kind: TypeExpr
+  tokens: [31..32]
+  data: {
+    root: 'i32'
+  }
+}
+node 13 {
+  kind: FnParameter
+  tokens: [29..32]
+  data: {
+    name: a
+    type_expr: 12
+  }
+}
+node 14 {
+  kind: FnPrototype
+  tokens: [26..33]
+  data: {
+    name: y
+  }
+}
+node 15 {
+  kind: Function
+  tokens: [26..33]
+  data: {
+    prototype: 14
   }
 }
