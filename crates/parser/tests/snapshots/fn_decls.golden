@@ -109,9 +109,18 @@ node 14 {
   }
 }
 node 15 {
+  kind: Block
+  tokens: [33..35]
+  data: {
+    statements: [
+    ]
+  }
+}
+node 16 {
   kind: Function
-  tokens: [26..33]
+  tokens: [26..35]
   data: {
     prototype: 14
+    block: 15
   }
 }

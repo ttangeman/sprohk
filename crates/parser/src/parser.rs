@@ -228,7 +228,7 @@ impl Parser {
 
     /// Parse a block of code for a function, a statement, or for introducing
     /// a new scope in valid contexts. Assumes that the opening brace has already
-    /// been seen, but _not_ consumed by caller. 
+    /// been seen, but _not_ consumed by caller.
     pub fn parse_block(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.at();
 
@@ -344,14 +344,28 @@ impl Parser {
                     ast.add_node_with_data(NodeKind::Function, span, |node_data| {
                         let func = Function {
                             prototype: proto_index,
+                            block: None,
                         };
                         node_data.add_function(func)
                     }),
                 )
             }
-            Some(TokenKind::LBracket) => {
-                // Parse block
-                todo!()
+            Some(TokenKind::LBrace) => {
+                // Parse function block
+                let block_index = self.parse_block(ast)?;
+                Ok(
+                    ast.add_node_with_data(
+                        NodeKind::Function,
+                        self.span_from(start),
+                        |node_data| {
+                            let func = Function {
+                                prototype: proto_index,
+                                block: Some(block_index),
+                            };
+                            node_data.add_function(func)
+                        },
+                    ),
+                )
             }
             Some(kind) => return Err(ParserError::UnexpectedToken(kind)),
             None => return Err(ParserError::UnexpectedEof),

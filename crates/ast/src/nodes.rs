@@ -95,7 +95,10 @@ pub enum AssignExpr {
 
 #[derive(Debug)]
 pub struct Function {
+    // Function prototype index
     pub prototype: NodeIndex,
+    // Optional `Block` index
+    pub block: Option<NodeIndex>,
 }
 
 // TODO: Would arena allocation be better suited?

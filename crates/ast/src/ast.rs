@@ -148,6 +148,18 @@ impl<'a> Ast<'a> {
             out.push_str(&format!("  kind: {}\n", kind));
             out.push_str(&format!("  tokens: {}\n", token_indices));
             match node.kind {
+                NodeKind::Block => {
+                    let block = self.node_data.get_block(*node);
+                    out.push_str("  data: {\n");
+
+                    out.push_str("    statements: [\n");
+                    for stmt_index in &block.statements {
+                        out.push_str(&format!("      {}\n", *stmt_index));
+                    }
+                    out.push_str("    ]\n");
+
+                    out.push_str("  }\n");
+                }
                 NodeKind::VarDecl => {
                     let var_decl = self.node_data.get_var_decl(*node);
                     let name_str = self.get_src(var_decl.name).unwrap_or("");
@@ -192,6 +204,9 @@ impl<'a> Ast<'a> {
                     let func = self.node_data.get_function(*node);
                     out.push_str("  data: {\n");
                     out.push_str(&format!("    prototype: {}\n", func.prototype));
+                    if let Some(block_index) = func.block {
+                        out.push_str(&format!("    block: {}\n", block_index));
+                    }
                     out.push_str("  }\n");
                 }
                 NodeKind::FnPrototype => {
