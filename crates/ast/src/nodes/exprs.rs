@@ -3,7 +3,7 @@ use crate::{BinaryOp, TokenIndex};
 /// Any expression that might yield a runtime value.
 #[derive(Debug)]
 pub enum ValueExpr {
-    /// Simple literal value 
+    /// Simple literal value
     Literal(TokenIndex),
     /// Simple variable reference
     Variable(TokenIndex),

@@ -98,6 +98,7 @@ pub enum TokenKind {
 }
 
 impl TokenKind {
+    #[inline]
     pub fn is_primitive_type(self) -> bool {
         matches!(
             self,
@@ -116,6 +117,7 @@ impl TokenKind {
         )
     }
 
+    #[inline]
     pub fn is_literal(self) -> bool {
         matches!(
             self,
@@ -125,6 +127,20 @@ impl TokenKind {
                 | TokenKind::True
                 | TokenKind::False
                 | TokenKind::Null
+        )
+    }
+
+    #[inline]
+    pub fn is_operator(self) -> bool {
+        matches!(
+            self,
+            TokenKind::Plus
+                | TokenKind::Minus
+                | TokenKind::Star
+                | TokenKind::Slash
+                | TokenKind::EqEq
+                | TokenKind::Less
+                | TokenKind::Greater
         )
     }
 }

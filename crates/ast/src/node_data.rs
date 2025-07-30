@@ -46,7 +46,7 @@ impl NodeData {
         self.var_decls.push(decl);
         index
     }
-    
+
     pub fn add_value_expr(&mut self, expr: ValueExpr) -> DataIndex {
         let index = self.value_exprs.len() as DataIndex;
         self.value_exprs.push(expr);
