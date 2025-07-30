@@ -221,9 +221,23 @@ impl Parser {
         Err(ParserError::UnexpectedEof)
     }
 
+    /// Parse a statement -- i.e., an independent line of execution with respect to
+    /// a code block. Statements contain some number of expressions that may or may not
+    /// yield values or have side effects.
     pub fn parse_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
-        _ = ast;
-        todo!()
+        while let Some(kind) = ast.get_token_kind(self.at()) {
+            match kind {
+                TokenKind::Var | TokenKind::Const | TokenKind::Let => {
+                    let var_decl_index = self.parse_var_decl(ast, kind)?;
+                    return Ok(var_decl_index);
+                }
+
+                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
+                kind=> return Err(ParserError::UnexpectedToken(kind)),
+            }
+        }
+
+        Err(ParserError::UnexpectedEof)
     }
 
     /// Parse a block of code for a function, a statement, or for introducing
@@ -331,7 +345,7 @@ impl Parser {
         let start = self.at();
 
         // Parse function prototype
-        let proto_index = self.parse_func_prototype(ast)?;
+        let proto_index = self.parse_fn_prototype(ast)?;
 
         // Try to parse block or terminate
         match ast.get_token_kind(self.at()) {
@@ -374,7 +388,7 @@ impl Parser {
 
     /// Parses a function prototype alongside the parameter list and return type expr.
     /// The block or terminating semicolon should be parsed separately.
-    pub fn parse_func_prototype(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+    pub fn parse_fn_prototype(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.at();
         // Move past the `Fn` token
         self.advance();

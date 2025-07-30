@@ -30,7 +30,6 @@ pub struct Node {
     pub data_index: DataIndex,
 }
 
-// TODO: Would arena allocation be better suited?
 pub type StatementList = SmallVec<[NodeIndex; 12]>;
 
 /// Generic node representing a block of code for a function,
@@ -101,7 +100,6 @@ pub struct Function {
     pub block: Option<NodeIndex>,
 }
 
-// TODO: Would arena allocation be better suited?
 pub type FnParameterList = SmallVec<[NodeIndex; 8]>;
 
 /// Function prototype is all of the expressions and metadata associated
