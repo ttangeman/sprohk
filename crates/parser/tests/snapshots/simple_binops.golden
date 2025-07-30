@@ -1,0 +1,160 @@
+node 0 {
+  kind: ValueExpr
+  tokens: [3..4]
+  data: {
+    literal: '1'
+  }
+}
+node 1 {
+  kind: ValueExpr
+  tokens: [5..6]
+  data: {
+    literal: '2'
+  }
+}
+node 2 {
+  kind: ValueExpr
+  tokens: [3..6]
+  data: {
+    op: '+'
+    lhs: '0'
+    rhs: '1'
+  }
+}
+node 3 {
+  kind: VarDecl
+  tokens: [0..7]
+  data: {
+    specifier: Var
+    name: 'a'
+    assign_expr: 2
+  }
+}
+node 4 {
+  kind: ValueExpr
+  tokens: [10..11]
+  data: {
+    variable: 'a'
+  }
+}
+node 5 {
+  kind: ValueExpr
+  tokens: [12..13]
+  data: {
+    literal: '3'
+  }
+}
+node 6 {
+  kind: ValueExpr
+  tokens: [10..13]
+  data: {
+    op: '+'
+    lhs: '4'
+    rhs: '5'
+  }
+}
+node 7 {
+  kind: VarDecl
+  tokens: [7..14]
+  data: {
+    specifier: Var
+    name: 'b'
+    assign_expr: 6
+  }
+}
+node 8 {
+  kind: ValueExpr
+  tokens: [17..18]
+  data: {
+    variable: 'b'
+  }
+}
+node 9 {
+  kind: ValueExpr
+  tokens: [19..20]
+  data: {
+    literal: '0'
+  }
+}
+node 10 {
+  kind: ValueExpr
+  tokens: [17..20]
+  data: {
+    op: '>'
+    lhs: '8'
+    rhs: '9'
+  }
+}
+node 11 {
+  kind: VarDecl
+  tokens: [14..21]
+  data: {
+    specifier: Var
+    name: 'c'
+    assign_expr: 10
+  }
+}
+node 12 {
+  kind: ValueExpr
+  tokens: [24..25]
+  data: {
+    variable: 'b'
+  }
+}
+node 13 {
+  kind: ValueExpr
+  tokens: [26..27]
+  data: {
+    literal: '10'
+  }
+}
+node 14 {
+  kind: ValueExpr
+  tokens: [24..27]
+  data: {
+    op: '<'
+    lhs: '12'
+    rhs: '13'
+  }
+}
+node 15 {
+  kind: VarDecl
+  tokens: [21..28]
+  data: {
+    specifier: Var
+    name: 'd'
+    assign_expr: 14
+  }
+}
+node 16 {
+  kind: ValueExpr
+  tokens: [31..32]
+  data: {
+    variable: 'b'
+  }
+}
+node 17 {
+  kind: ValueExpr
+  tokens: [33..34]
+  data: {
+    literal: '6'
+  }
+}
+node 18 {
+  kind: ValueExpr
+  tokens: [31..34]
+  data: {
+    op: '=='
+    lhs: '16'
+    rhs: '17'
+  }
+}
+node 19 {
+  kind: VarDecl
+  tokens: [28..35]
+  data: {
+    specifier: Var
+    name: 'e'
+    assign_expr: 18
+  }
+}

@@ -1,0 +1,5 @@
+var a = 1 + 2;
+var b = a + 3;
+var c = b > 0;
+var d = b < 10;
+var e = b == 6;
