@@ -16,14 +16,12 @@ pub enum NodeKind {
     Block,
 
     VarDecl,
+    ValueExpr,
     TypeExpr,
-    AssignExpr,
 
     Function,
     FnPrototype,
     FnParameter,
-
-    BinaryOp,
 }
 
 pub type NodeIndex = u32;

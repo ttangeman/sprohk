@@ -30,7 +30,7 @@ node 3 {
   }
 }
 node 4 {
-  kind: AssignExpr
+  kind: ValueExpr
   tokens: [13..14]
   data: {
     literal: '42'

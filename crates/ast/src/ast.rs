@@ -174,6 +174,21 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                NodeKind::ValueExpr => {
+                    let expr = self.node_data.get_value_expr(*node);
+                    out.push_str("  data: {\n");
+                    match *expr {
+                        ValueExpr::Variable(index) => {
+                            let var_str = self.get_src(index).unwrap_or("");
+                            out.push_str(&format!("    variable: '{}'\n", var_str));
+                        }
+                        ValueExpr::Literal(index) => {
+                            let lit_str = self.get_src(index).unwrap_or("");
+                            out.push_str(&format!("    literal: '{}'\n", lit_str));
+                        }
+                    }
+                    out.push_str("  }\n");
+                }
                 NodeKind::TypeExpr => {
                     let type_expr = self.node_data.get_type_expr(*node);
                     match *type_expr {
@@ -184,21 +199,6 @@ impl<'a> Ast<'a> {
                             out.push_str("  }\n");
                         }
                     }
-                }
-                NodeKind::AssignExpr => {
-                    let assign_expr = self.node_data.get_assign_expr(*node);
-                    out.push_str("  data: {\n");
-                    match assign_expr {
-                        AssignExpr::Variable(index) => {
-                            let var_str = self.get_src(*index).unwrap_or("");
-                            out.push_str(&format!("    variable: '{}'\n", var_str));
-                        }
-                        AssignExpr::Literal(index) => {
-                            let lit_str = self.get_src(*index).unwrap_or("");
-                            out.push_str(&format!("    literal: '{}'\n", lit_str));
-                        }
-                    }
-                    out.push_str("  }\n");
                 }
                 NodeKind::Function => {
                     let func = self.node_data.get_function(*node);

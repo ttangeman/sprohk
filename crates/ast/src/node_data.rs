@@ -9,8 +9,10 @@ pub type DataIndex = u32;
 pub struct NodeData {
     blocks: Vec<Block>,
     var_decls: Vec<VarDecl>,
+
+    value_exprs: Vec<ValueExpr>,
     type_exprs: Vec<TypeExpr>,
-    assign_exprs: Vec<AssignExpr>,
+
     functions: Vec<Function>,
     fn_protos: Vec<FnPrototype>,
     fn_params: Vec<FnParameter>,
@@ -25,8 +27,8 @@ impl NodeData {
         NodeData {
             blocks: Vec::new(),
             var_decls: Vec::new(),
+            value_exprs: Vec::new(),
             type_exprs: Vec::new(),
-            assign_exprs: Vec::new(),
             functions: Vec::new(),
             fn_protos: Vec::new(),
             fn_params: Vec::new(),
@@ -44,16 +46,16 @@ impl NodeData {
         self.var_decls.push(decl);
         index
     }
+    
+    pub fn add_value_expr(&mut self, expr: ValueExpr) -> DataIndex {
+        let index = self.value_exprs.len() as DataIndex;
+        self.value_exprs.push(expr);
+        index
+    }
 
     pub fn add_type_expr(&mut self, type_expr: TypeExpr) -> DataIndex {
         let index = self.type_exprs.len() as DataIndex;
         self.type_exprs.push(type_expr);
-        index
-    }
-
-    pub fn add_assign_expr(&mut self, assign_expr: AssignExpr) -> DataIndex {
-        let index = self.assign_exprs.len() as DataIndex;
-        self.assign_exprs.push(assign_expr);
         index
     }
 
@@ -85,14 +87,14 @@ impl NodeData {
         &self.var_decls[node.data_index as usize]
     }
 
+    pub fn get_value_expr(&self, node: Node) -> &ValueExpr {
+        assert_eq!(node.kind, NodeKind::ValueExpr);
+        &self.value_exprs[node.data_index as usize]
+    }
+
     pub fn get_type_expr(&self, node: Node) -> &TypeExpr {
         assert_eq!(node.kind, NodeKind::TypeExpr);
         &self.type_exprs[node.data_index as usize]
-    }
-
-    pub fn get_assign_expr(&self, node: Node) -> &AssignExpr {
-        assert_eq!(node.kind, NodeKind::AssignExpr);
-        &self.assign_exprs[node.data_index as usize]
     }
 
     pub fn get_function(&self, node: Node) -> &Function {

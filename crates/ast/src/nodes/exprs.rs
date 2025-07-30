@@ -1,5 +1,14 @@
 use crate::TokenIndex;
 
+/// Any expression that might yield a runtime value.
+#[derive(Debug)]
+pub enum ValueExpr {
+    /// Simple literal value 
+    Literal(TokenIndex),
+    /// Simple variable reference
+    Variable(TokenIndex),
+}
+
 /// Represents a type expression for assigning a type, which is
 /// either statically or dynamically resolved potentially, to a
 /// typed declaration (e.g., a variable declaration, return type, or
@@ -14,13 +23,4 @@ pub enum TypeExpr {
         name: TokenIndex,
         // TODO: specifier, references, etc.
     }, // TODO: More complicated compile time expressions
-}
-
-/// Special case assignment expression for variable declarations.
-#[derive(Debug)]
-pub enum AssignExpr {
-    // Simple variable assignment with token index to variable name
-    Variable(TokenIndex),
-    // Simple literal assignment with token index to literal value
-    Literal(TokenIndex),
 }

@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    AssignExpr, Ast, Block, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex,
-    NodeKind, StatementList, TokenIndex, TypeExpr, VarDecl,
+    Ast, Block, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex, NodeKind,
+    StatementList, TokenIndex, TypeExpr, ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -113,6 +113,82 @@ impl Parser {
         None
     }
 
+    /// Parses an expression that yields a value.
+    /// Valid in contexts such as assignment or intermediate operations.
+    pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<Option<NodeIndex>, ParserError> {
+        let start = self.at();
+        let mut root_node: Option<NodeIndex> = None;
+
+        while let Some(token) = ast.get_token_kind(self.at()) {
+            match token {
+                // Parse the identifier as a variable name or function name.
+                TokenKind::Identifier => {
+                    let name_index = self.at();
+                    self.advance();
+
+                    if root_node.is_none() {
+                        root_node = Some(ast.add_node_with_data(
+                            NodeKind::ValueExpr,
+                            self.span_from(start),
+                            |node_data| {
+                                let expr = ValueExpr::Variable(name_index);
+                                node_data.add_value_expr(expr)
+                            },
+                        ));
+                    } else {
+                        return Err(ParserError::InvalidSyntax(
+                            "Unexpected identifier: multiple identifiers in assignment expression"
+                                .to_string(),
+                        ));
+                    }
+
+                    // TODO: accept function calls
+                }
+
+                // Parse a literal value (e.g., number, string).
+                _ if token.is_literal() => {
+                    let literal_index = self.at();
+                    self.advance();
+
+                    if root_node.is_none() {
+                        root_node = Some(ast.add_node_with_data(
+                            NodeKind::ValueExpr,
+                            self.span_from(start),
+                            |node_data| {
+                                let expr = ValueExpr::Literal(literal_index);
+                                node_data.add_value_expr(expr)
+                            },
+                        ));
+                    } else {
+                        return Err(ParserError::InvalidSyntax(
+                            "Unexpected literal: multiple literals in value expression".to_string(),
+                        ));
+                    }
+                }
+
+                // Terminates expression parsing.
+                TokenKind::Semicolon => {
+                    self.advance();
+
+                    return root_node
+                        .is_some()
+                        .then(|| {
+                            // If we have a root node, return it.
+                            root_node
+                        })
+                        .ok_or(ParserError::InvalidSyntax(
+                            "Expected an expression before semicolon".to_string(),
+                        ));
+                }
+
+                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
+                _ => return Err(ParserError::UnexpectedToken(token)),
+            }
+        }
+
+        Err(ParserError::UnexpectedEof)
+    }
+
     /// Parses a type expression from the current position in the token stream.
     pub fn parse_type_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let type_start = self.at();
@@ -144,83 +220,6 @@ impl Parser {
         ))
     }
 
-    /// Parses an expression in the context of an assignment operation.
-    /// It is assumed that the equal sign (`=`) has already been consumed.
-    pub fn parse_assign_expr(&mut self, ast: &mut Ast) -> Result<Option<NodeIndex>, ParserError> {
-        let start = self.at();
-        let mut root_node: Option<NodeIndex> = None;
-
-        while let Some(token) = ast.get_token_kind(self.at()) {
-            match token {
-                // Parse the identifier as a variable name or function name.
-                TokenKind::Identifier => {
-                    let name_index = self.at();
-                    self.advance();
-
-                    if root_node.is_none() {
-                        root_node = Some(ast.add_node_with_data(
-                            NodeKind::AssignExpr,
-                            self.span_from(start),
-                            |node_data| {
-                                let assign_expr = AssignExpr::Variable(name_index);
-                                node_data.add_assign_expr(assign_expr)
-                            },
-                        ));
-                    } else {
-                        return Err(ParserError::InvalidSyntax(
-                            "Unexpected identifier: multiple identifiers in assignment expression"
-                                .to_string(),
-                        ));
-                    }
-
-                    // TODO: accept function calls
-                }
-
-                // Parse a literal value (e.g., number, string).
-                _ if token.is_literal() => {
-                    let literal_index = self.at();
-                    self.advance();
-
-                    if root_node.is_none() {
-                        root_node = Some(ast.add_node_with_data(
-                            NodeKind::AssignExpr,
-                            self.span_from(start),
-                            |node_data| {
-                                let assign_expr = AssignExpr::Literal(literal_index);
-                                node_data.add_assign_expr(assign_expr)
-                            },
-                        ));
-                    } else {
-                        return Err(ParserError::InvalidSyntax(
-                            "Unexpected literal: multiple literals in assignment expression"
-                                .to_string(),
-                        ));
-                    }
-                }
-
-                // Terminates expression parsing.
-                TokenKind::Semicolon => {
-                    self.advance();
-
-                    return root_node
-                        .is_some()
-                        .then(|| {
-                            // If we have a root node, return it.
-                            root_node
-                        })
-                        .ok_or(ParserError::InvalidSyntax(
-                            "Expected an expression before semicolon".to_string(),
-                        ));
-                }
-
-                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
-                _ => return Err(ParserError::UnexpectedToken(token)),
-            }
-        }
-
-        Err(ParserError::UnexpectedEof)
-    }
-
     /// Parse a statement -- i.e., an independent line of execution with respect to
     /// a code block. Statements contain some number of expressions that may or may not
     /// yield values or have side effects.
@@ -233,7 +232,7 @@ impl Parser {
                 }
 
                 TokenKind::Eof => return Err(ParserError::UnexpectedEof),
-                kind=> return Err(ParserError::UnexpectedToken(kind)),
+                kind => return Err(ParserError::UnexpectedToken(kind)),
             }
         }
 
@@ -307,7 +306,7 @@ impl Parser {
 
         // Parse the optional initializer
         let assign_expr = if self.accept(ast, TokenKind::Eq).is_some() {
-            self.parse_assign_expr(ast)?
+            self.parse_value_expr(ast)?
         } else {
             // Expect terminating semicolon if no assignment.
             self.expect(ast, TokenKind::Semicolon)?;
