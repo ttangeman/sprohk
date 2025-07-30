@@ -1,6 +1,10 @@
+//! Note: operators are not considered separate nodes.
+//! They are defined and used inside of the expression parsing.
+
 use crate::nodes::NodeIndex;
 
-pub enum Operator {
+#[derive(Debug, Copy, Clone)]
+pub enum OpKind {
     Add,
     Sub,
 
@@ -8,11 +12,23 @@ pub enum Operator {
     Div,
 }
 
+impl OpKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            OpKind::Add => "+",
+            OpKind::Sub => "-",
+            OpKind::Mul => "*",
+            OpKind::Div => "/",
+        }
+    }
+}
+
 /// Simple binary operation (e.g., x + y)
+#[derive(Debug)]
 pub struct BinaryOp {
-    pub op: Operator,
+    pub kind: OpKind,
 
     // Left and right-hand side expression node indices
-    pub lhs: Option<NodeIndex>,
-    pub rhs: Option<NodeIndex>,
+    pub lhs: NodeIndex,
+    pub rhs: NodeIndex,
 }

@@ -1,4 +1,4 @@
-use crate::TokenIndex;
+use crate::{BinaryOp, TokenIndex};
 
 /// Any expression that might yield a runtime value.
 #[derive(Debug)]
@@ -7,6 +7,9 @@ pub enum ValueExpr {
     Literal(TokenIndex),
     /// Simple variable reference
     Variable(TokenIndex),
+
+    /// Binary operator
+    BinaryOp(BinaryOp),
 }
 
 /// Represents a type expression for assigning a type, which is

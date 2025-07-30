@@ -177,14 +177,20 @@ impl<'a> Ast<'a> {
                 NodeKind::ValueExpr => {
                     let expr = self.node_data.get_value_expr(*node);
                     out.push_str("  data: {\n");
-                    match *expr {
+                    match expr {
                         ValueExpr::Variable(index) => {
-                            let var_str = self.get_src(index).unwrap_or("");
+                            let var_str = self.get_src(*index).unwrap_or("");
                             out.push_str(&format!("    variable: '{}'\n", var_str));
                         }
                         ValueExpr::Literal(index) => {
-                            let lit_str = self.get_src(index).unwrap_or("");
+                            let lit_str = self.get_src(*index).unwrap_or("");
                             out.push_str(&format!("    literal: '{}'\n", lit_str));
+                        }
+                        ValueExpr::BinaryOp(op) => {
+                            let op_str = op.kind.as_str();
+                            out.push_str(&format!("    op: '{}'\n", op_str));
+                            out.push_str(&format!("    lhs: '{}'\n", op.lhs));
+                            out.push_str(&format!("    rhs: '{}'\n", op.rhs));
                         }
                     }
                     out.push_str("  }\n");
