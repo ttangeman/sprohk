@@ -1,0 +1,96 @@
+node 0 {
+  kind: ValueExpr
+  tokens: [3..4]
+  data: {
+    literal: '1'
+  }
+}
+node 1 {
+  kind: ValueExpr
+  tokens: [5..6]
+  data: {
+    literal: '2'
+  }
+}
+node 2 {
+  kind: ValueExpr
+  tokens: [3..6]
+  data: {
+    op: '*'
+    lhs: 0
+    rhs: 1
+  }
+}
+node 3 {
+  kind: ValueExpr
+  tokens: [7..8]
+  data: {
+    literal: '3'
+  }
+}
+node 4 {
+  kind: ValueExpr
+  tokens: [3..8]
+  data: {
+    op: '+'
+    lhs: 2
+    rhs: 3
+  }
+}
+node 5 {
+  kind: VarDecl
+  tokens: [0..9]
+  data: {
+    specifier: Var
+    name: 'a'
+    assign_expr: 4
+  }
+}
+node 6 {
+  kind: ValueExpr
+  tokens: [12..13]
+  data: {
+    literal: '1'
+  }
+}
+node 7 {
+  kind: ValueExpr
+  tokens: [14..15]
+  data: {
+    literal: '2'
+  }
+}
+node 8 {
+  kind: ValueExpr
+  tokens: [16..17]
+  data: {
+    literal: '3'
+  }
+}
+node 9 {
+  kind: ValueExpr
+  tokens: [14..17]
+  data: {
+    op: '*'
+    lhs: 7
+    rhs: 8
+  }
+}
+node 10 {
+  kind: ValueExpr
+  tokens: [12..17]
+  data: {
+    op: '+'
+    lhs: 6
+    rhs: 9
+  }
+}
+node 11 {
+  kind: VarDecl
+  tokens: [9..18]
+  data: {
+    specifier: Var
+    name: 'b'
+    assign_expr: 10
+  }
+}

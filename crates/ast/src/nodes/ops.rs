@@ -17,6 +17,16 @@ pub enum OpKind {
     Gt, // >
 }
 
+#[derive(Copy, Clone)]
+pub enum Precedence {
+    Lowest = 0,
+
+    Comparison = 30,
+
+    Sum = 60,
+    Product = 70,
+}
+
 impl OpKind {
     pub fn from_token_kind(kind: TokenKind) -> Option<Self> {
         match kind {
@@ -41,6 +51,24 @@ impl OpKind {
             OpKind::Lt => "<",
             OpKind::Gt => ">",
         }
+    }
+
+    pub fn precedence(self) -> Precedence {
+        match self {
+            OpKind::Add => Precedence::Sum,
+            OpKind::Sub => Precedence::Sum,
+            OpKind::Mul => Precedence::Product,
+            OpKind::Div => Precedence::Product,
+            OpKind::Eq => Precedence::Comparison,
+            OpKind::Lt => Precedence::Comparison,
+            OpKind::Gt => Precedence::Comparison,
+        }
+    }
+}
+
+impl Precedence {
+    pub fn value(self) -> u8 {
+        return self as u8;
     }
 }
 
