@@ -115,7 +115,7 @@ impl Parser {
 
     /// Parses an expression that yields a value.
     /// Valid in contexts such as assignment or intermediate operations.
-    /// 
+    ///
     /// NOTE: Semicolon is not parsed as part of the expression, so it needs
     /// to be manually advanced past post-invocation.
     pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
@@ -123,65 +123,106 @@ impl Parser {
             Start,
             Identifier(NodeIndex),
             Literal(NodeIndex),
-            BinaryOp(NodeIndex),
+
+            // Partial binary op
+            LhsOp(NodeIndex, OpKind),
+            BinaryOp(NodeIndex, OpKind),
         }
 
-        let start = self.at();
-        let mut state: State = State::Start;
+        let expr_start = self.at();
+        let mut state = State::Start;
 
         while let Some(token) = ast.get_token_kind(self.at()) {
             match token {
                 TokenKind::Identifier => {
+                    let ident_start = self.at();
                     self.advance();
-                    let node_index = ast.add_node_with_data(
+
+                    let ident_index = ast.add_node_with_data(
                         NodeKind::ValueExpr,
-                        self.span_from(start),
+                        self.span_from(ident_start),
                         |node_data| {
-                            let expr = ValueExpr::Variable(start);
+                            let expr = ValueExpr::Variable(ident_start);
                             node_data.add_value_expr(expr)
                         },
                     );
-                    state = State::Identifier(node_index);
+                    match state {
+                        // Binary op rhs parsed
+                        State::LhsOp(lhs_index, op_kind) => {
+                            let bin_op_index = ast.add_node_with_data(
+                                NodeKind::ValueExpr,
+                                self.span_from(expr_start),
+                                |node_data| {
+                                    let expr = ValueExpr::BinaryOp(BinaryOp {
+                                        kind: op_kind,
+                                        lhs: lhs_index,
+                                        rhs: ident_index,
+                                    });
+                                    node_data.add_value_expr(expr)
+                                },
+                            );
+                            state = State::BinaryOp(bin_op_index, op_kind);
+                        }
+                        // Plain Identifier
+                        _ => state = State::Identifier(ident_index),
+                    }
                 }
                 _ if token.is_literal() => {
+                    let lit_start = self.at();
                     self.advance();
-                    let node_index = ast.add_node_with_data(
+
+                    let lit_index = ast.add_node_with_data(
                         NodeKind::ValueExpr,
-                        self.span_from(start),
+                        self.span_from(lit_start),
                         |node_data| {
-                            let expr = ValueExpr::Literal(start);
+                            let expr = ValueExpr::Literal(lit_start);
                             node_data.add_value_expr(expr)
                         },
                     );
-                    state = State::Literal(node_index);
+                    match state {
+                        // Binary op rhs parsed
+                        State::LhsOp(lhs_index, op_kind) => {
+                            let bin_op_index = ast.add_node_with_data(
+                                NodeKind::ValueExpr,
+                                self.span_from(expr_start),
+                                |node_data| {
+                                    let expr = ValueExpr::BinaryOp(BinaryOp {
+                                        kind: op_kind,
+                                        lhs: lhs_index,
+                                        rhs: lit_index,
+                                    });
+                                    node_data.add_value_expr(expr)
+                                },
+                            );
+                            state = State::BinaryOp(bin_op_index, op_kind);
+                        }
+                        // Plain literal
+                        _ => state = State::Literal(lit_index),
+                    }
                 }
                 _ if token.is_operator() => {
                     let op_kind = OpKind::from_token_kind(token).unwrap();
                     self.advance();
 
                     match state {
-                        // Unary op
+                        // Partial unary op
                         State::Start => {
                             todo!()
                         }
-                        // Binary op
+                        // Partial binary op
                         State::Identifier(lhs_index) | State::Literal(lhs_index) => {
-                            let rhs_index = self.parse_value_expr(ast)?;
-                            let node_index = ast.add_node_with_data(
-                                NodeKind::ValueExpr,
-                                self.span_from(start),
-                                |node_data| {
-                                    let expr = ValueExpr::BinaryOp(BinaryOp {
-                                        kind: op_kind,
-                                        lhs: lhs_index,
-                                        rhs: rhs_index,
-                                    });
-                                    node_data.add_value_expr(expr)
-                                },
-                            );
-                            state = State::BinaryOp(node_index);
+                            state = State::LhsOp(lhs_index, op_kind);
                         }
-                        _ => todo!(),
+                        // Partial sub-expression binary op
+                        State::BinaryOp(lhs_index, op_kind) => {
+                            state = State::LhsOp(lhs_index, op_kind);
+                        }
+                        State::LhsOp(_, _) => {
+                            return Err(ParserError::InvalidSyntax(
+                                "Multiple operators found when parsing binary operation"
+                                    .to_string(),
+                            ));
+                        }
                     }
                 }
                 // Terminates expression parsing.
@@ -193,18 +234,23 @@ impl Parser {
                             "Cannot have an empty expression".to_string(),
                         ));
                     }
+                    State::LhsOp(_, _) => {
+                        return Err(ParserError::InvalidSyntax(
+                            "Parsed partial binary operation".to_string(),
+                        ));
+                    }
                     State::Literal(node_index)
                     | State::Identifier(node_index)
-                    | State::BinaryOp(node_index) => return Ok(node_index),
+                    | State::BinaryOp(node_index, _) => return Ok(node_index),
                 },
 
                 TokenKind::Eof => match state {
-                    State::Start => {
+                    State::Start | State::LhsOp(_, _) => {
                         return Err(ParserError::UnexpectedEof);
                     }
                     State::Literal(node_index)
                     | State::Identifier(node_index)
-                    | State::BinaryOp(node_index) => return Ok(node_index),
+                    | State::BinaryOp(node_index, _) => return Ok(node_index),
                 },
                 _ => return Err(ParserError::UnexpectedToken(token)),
             }
