@@ -119,6 +119,7 @@ impl Parser {
     /// NOTE: Semicolon is not parsed as part of the expression, so it needs
     /// to be manually advanced past post-invocation.
     pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        // Uses a state machine to avoid recursion stack limits
         enum State {
             Start,
             Identifier(NodeIndex),
@@ -126,7 +127,7 @@ impl Parser {
 
             // Partial binary op
             LhsOp(NodeIndex, OpKind),
-            BinaryOp(NodeIndex, OpKind),
+            BinaryOp(NodeIndex),
         }
 
         let expr_start = self.at();
@@ -161,7 +162,7 @@ impl Parser {
                                     node_data.add_value_expr(expr)
                                 },
                             );
-                            state = State::BinaryOp(bin_op_index, op_kind);
+                            state = State::BinaryOp(bin_op_index);
                         }
                         // Plain Identifier
                         _ => state = State::Identifier(ident_index),
@@ -194,7 +195,7 @@ impl Parser {
                                     node_data.add_value_expr(expr)
                                 },
                             );
-                            state = State::BinaryOp(bin_op_index, op_kind);
+                            state = State::BinaryOp(bin_op_index);
                         }
                         // Plain literal
                         _ => state = State::Literal(lit_index),
@@ -214,7 +215,7 @@ impl Parser {
                             state = State::LhsOp(lhs_index, op_kind);
                         }
                         // Partial sub-expression binary op
-                        State::BinaryOp(lhs_index, op_kind) => {
+                        State::BinaryOp(lhs_index) => {
                             state = State::LhsOp(lhs_index, op_kind);
                         }
                         State::LhsOp(_, _) => {
@@ -241,7 +242,7 @@ impl Parser {
                     }
                     State::Literal(node_index)
                     | State::Identifier(node_index)
-                    | State::BinaryOp(node_index, _) => return Ok(node_index),
+                    | State::BinaryOp(node_index) => return Ok(node_index),
                 },
 
                 TokenKind::Eof => match state {
@@ -250,7 +251,7 @@ impl Parser {
                     }
                     State::Literal(node_index)
                     | State::Identifier(node_index)
-                    | State::BinaryOp(node_index, _) => return Ok(node_index),
+                    | State::BinaryOp(node_index) => return Ok(node_index),
                 },
                 _ => return Err(ParserError::UnexpectedToken(token)),
             }

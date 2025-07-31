@@ -17,8 +17,8 @@ node 2 {
   tokens: [3..6]
   data: {
     op: '+'
-    lhs: '0'
-    rhs: '1'
+    lhs: 0
+    rhs: 1
   }
 }
 node 3 {
@@ -49,8 +49,8 @@ node 6 {
   tokens: [10..13]
   data: {
     op: '+'
-    lhs: '4'
-    rhs: '5'
+    lhs: 4
+    rhs: 5
   }
 }
 node 7 {
@@ -81,8 +81,8 @@ node 10 {
   tokens: [17..20]
   data: {
     op: '>'
-    lhs: '8'
-    rhs: '9'
+    lhs: 8
+    rhs: 9
   }
 }
 node 11 {
@@ -113,8 +113,8 @@ node 14 {
   tokens: [24..27]
   data: {
     op: '<'
-    lhs: '12'
-    rhs: '13'
+    lhs: 12
+    rhs: 13
   }
 }
 node 15 {
@@ -145,8 +145,8 @@ node 18 {
   tokens: [31..34]
   data: {
     op: '=='
-    lhs: '16'
-    rhs: '17'
+    lhs: 16
+    rhs: 17
   }
 }
 node 19 {
