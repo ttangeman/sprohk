@@ -129,17 +129,21 @@ impl Parser {
     /// NOTE: Semicolon is not parsed as part of the expression, so it needs
     /// to be manually advanced past post-invocation.
     pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
-        self.parse_value_expr_primary(ast, Precedence::Lowest)
+        self.parse_value_expr_pratt(ast, Precedence::Lowest)
     }
 
-    // Helper for `parse_value_expr`
-    fn parse_value_expr_primary(
+    /// Helper for `parse_value_expr`
+    /// Uses Pratt Parsing and recursion to handle operator precedence.
+    fn parse_value_expr_pratt(
         &mut self,
         ast: &mut Ast,
         min_prec: Precedence,
     ) -> Result<NodeIndex, ParserError> {
         let expr_start = self.at();
         let mut lhs = match self.peek_token(ast) {
+            Some(token) if token.is_operator() => {
+                todo!("unary ops");
+            }
             Some(token) if token.is_literal() => {
                 let start = self.at();
                 self.advance();
@@ -149,9 +153,6 @@ impl Parser {
                     self.span_from(start),
                     ValueExpr::Literal(start),
                 ))
-            }
-            Some(token) if token.is_operator() => {
-                todo!("unary ops");
             }
             Some(TokenKind::Identifier) => {
                 let start = self.at();
@@ -181,17 +182,19 @@ impl Parser {
             let prec = op.precedence();
 
             if prec.value() < min_prec.value() {
+                // Lower precedence: recurse upwards and parse op as a new expression
                 break;
             } else {
+                // Higher precedence: consume operator, parse rhs, and construct bin op
                 self.advance();
-            }
 
-            let rhs = self.parse_value_expr_primary(ast, prec)?;
-            lhs = add_value_expr(
-                ast,
-                self.span_from(expr_start),
-                ValueExpr::BinaryOp(BinaryOp { kind: op, lhs, rhs }),
-            );
+                let rhs = self.parse_value_expr_pratt(ast, prec)?;
+                lhs = add_value_expr(
+                    ast,
+                    self.span_from(expr_start),
+                    ValueExpr::BinaryOp(BinaryOp { kind: op, lhs, rhs }),
+                );
+            }
         }
 
         Ok(lhs)
