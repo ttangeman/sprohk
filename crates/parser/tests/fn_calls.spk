@@ -1,0 +1,6 @@
+fn foobar(p: i32) {
+    let a = foo();
+    let b = bar(1, 2, 3);
+}
+
+const x = foobar(42);

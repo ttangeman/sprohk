@@ -1,7 +1,8 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
-    Ast, BinaryOp, Block, FnParameter, FnParameterList, FnPrototype, Function, NodeIndex, NodeKind,
-    OpKind, Precedence, StatementList, TokenIndex, TypeExpr, ValueExpr, VarDecl,
+    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnParameterList, FnPrototype, Function,
+    NodeIndex, NodeKind, OpKind, Precedence, StatementList, TokenIndex, TypeExpr, ValueExpr,
+    VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -126,8 +127,9 @@ impl Parser {
     /// Parses an expression that yields a value.
     /// Valid in contexts such as assignment or intermediate operations.
     ///
-    /// NOTE: Semicolon is not parsed as part of the expression, so it needs
-    /// to be manually advanced past post-invocation.
+    /// NOTE: Delimiters (; or ,) are not parsed as part of the expression, so they need
+    /// to be manually handled post-invocation which helps assert that they are in semantically
+    /// correct positions in a statement or expression list.
     pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         self.parse_value_expr_pratt(ast, Precedence::Lowest)
     }
@@ -158,13 +160,21 @@ impl Parser {
                 let start = self.at();
                 self.advance();
 
-                // TODO: Function calls
-
-                Ok(add_value_expr(
-                    ast,
-                    self.span_from(start),
-                    ValueExpr::Variable(start),
-                ))
+                // Check for function call; otherwise it's a variable name
+                if self.accept(ast, TokenKind::LParen).is_some() {
+                    let fn_call = self.parse_fn_call_expr(ast, start)?;
+                    Ok(add_value_expr(
+                        ast,
+                        self.span_from(start),
+                        ValueExpr::Function(fn_call),
+                    ))
+                } else {
+                    Ok(add_value_expr(
+                        ast,
+                        self.span_from(start),
+                        ValueExpr::Variable(start),
+                    ))
+                }
             }
             Some(token) => Err(ParserError::UnexpectedToken(token)),
             None => Err(ParserError::UnexpectedEof),
@@ -173,7 +183,12 @@ impl Parser {
         loop {
             let op = match self.peek_token(ast) {
                 Some(token) if token.is_operator() => Ok(OpKind::from_token_kind(token).unwrap()),
-                Some(TokenKind::Semicolon) => break, // terminate
+                // Terminate upon seeing a delimiter. Semicolon is considered a statement terminator,
+                // comma is an expression list terminator, and rparen is a function list terminator and
+                // is not handled as a precedence marker at this stage
+                Some(TokenKind::Semicolon) | Some(TokenKind::Comma) | Some(TokenKind::RParen) => {
+                    break;
+                }
 
                 Some(token) => Err(ParserError::UnexpectedToken(token)),
                 None => Err(ParserError::UnexpectedEof),
@@ -198,6 +213,57 @@ impl Parser {
         }
 
         Ok(lhs)
+    }
+
+    /// Parses a function call expression (i.e. this may recurse into parsing other expressions).
+    /// Intended to be used inside of expression parser as a sub-expression handler.
+    ///
+    /// Assumes that the open paren has been seen _and_ consumed and that the ambiguous
+    /// identifier token index is passed as an input.
+    fn parse_fn_call_expr(
+        &mut self,
+        ast: &mut Ast,
+        name_index: TokenIndex,
+    ) -> Result<FnCallExpr, ParserError> {
+        debug_assert_eq!(ast.get_token_kind(name_index), Some(TokenKind::Identifier));
+        debug_assert_eq!(
+            ast.get_token_kind(self.at() - 1).unwrap(),
+            TokenKind::LParen
+        );
+
+        let mut params = FnParameterList::new();
+
+        while let Some(kind) = self.peek_token(ast) {
+            match kind {
+                // Terminate parsing -- this handles empty function parameter list
+                TokenKind::RParen => {
+                    self.advance();
+                    break;
+                }
+                // Error out if comma was parsed unexpectedly (i.e. multiple commas or comma in first position)
+                // Note that trailing commas are allowed because the expression parsing arm always accepts one.
+                TokenKind::Comma => return Err(ParserError::UnexpectedToken(kind)),
+                TokenKind::Eof => return Err(ParserError::UnexpectedEof),
+
+                _ => {
+                    // Parse parameter
+                    let param_index = self.parse_value_expr(ast)?;
+                    params.push(param_index);
+
+                    // Lookahead to see if we should expect comma or terminate parsing on ')'
+                    if self.accept(ast, TokenKind::RParen).is_some() {
+                        break;
+                    } else {
+                        self.expect(ast, TokenKind::Comma)?;
+                    }
+                }
+            }
+        }
+
+        Ok(FnCallExpr {
+            name: name_index,
+            parameters: params,
+        })
     }
 
     /// Parses a type expression from the current position in the token stream.
