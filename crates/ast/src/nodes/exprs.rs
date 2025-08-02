@@ -1,4 +1,4 @@
-use crate::{BinaryOp, TokenIndex};
+use crate::{BinaryOp, FnParameterList, TokenIndex};
 
 /// Any expression that might yield a runtime value.
 #[derive(Debug)]
@@ -7,6 +7,8 @@ pub enum ValueExpr {
     Literal(TokenIndex),
     /// Simple variable reference
     Variable(TokenIndex),
+    /// Function call expr
+    Function(FnCallExpr),
 
     /// Binary operator
     BinaryOp(BinaryOp),
@@ -26,4 +28,16 @@ pub enum TypeExpr {
         name: TokenIndex,
         // TODO: specifier, references, etc.
     }, // TODO: More complicated compile time expressions
+}
+
+/// Function call expression. Not directly stored on Ast; used as
+/// part of the `ValueExpr` node type as it has value expression
+/// semantics and can be parsed as part of a larger expression.
+#[derive(Debug)]
+pub struct FnCallExpr {
+    /// Token index to function name invocation
+    pub name: TokenIndex,
+    /// List of function parameter expression node indices.
+    /// Uses SBO to minimize small allocations   
+    pub parameters: FnParameterList,
 }

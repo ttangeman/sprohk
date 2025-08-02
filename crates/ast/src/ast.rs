@@ -186,6 +186,15 @@ impl<'a> Ast<'a> {
                             let lit_str = self.get_src(*index).unwrap_or("");
                             out.push_str(&format!("    literal: '{}'\n", lit_str));
                         }
+                        ValueExpr::Function(fn_call) => {
+                            let name_str = self.get_src(fn_call.name).unwrap_or("");
+                            out.push_str(&format!("    function: '{}'\n", name_str));
+                            out.push_str(&format!("    params: [\n"));
+                            for param_index in &fn_call.parameters {
+                                out.push_str(&format!("      {}\n", *param_index));
+                            }
+                            out.push_str(&format!("    ]\n"));
+                        }
                         ValueExpr::BinaryOp(op) => {
                             let op_str = op.kind.as_str();
                             out.push_str(&format!("    op: '{}'\n", op_str));
