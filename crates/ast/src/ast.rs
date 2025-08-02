@@ -152,11 +152,16 @@ impl<'a> Ast<'a> {
                     let block = self.node_data.get_block(*node);
                     out.push_str("  data: {\n");
 
-                    out.push_str("    statements: [\n");
-                    for stmt_index in &block.statements {
-                        out.push_str(&format!("      {}\n", *stmt_index));
+                    if !block.statements.is_empty() {
+                        out.push_str("    statements: [\n");
+                        for (i, stmt_index) in block.statements.iter().enumerate() {
+                            out.push_str(&format!("      {}", *stmt_index));
+                            if i < block.statements.len() - 1 {
+                                out.push_str(&format!(",\n"));
+                            }
+                        }
+                        out.push_str("    \n]\n");
                     }
-                    out.push_str("    ]\n");
 
                     out.push_str("  }\n");
                 }
@@ -191,10 +196,13 @@ impl<'a> Ast<'a> {
                             out.push_str(&format!("    function: '{}'\n", name_str));
                             if !fn_call.parameters.is_empty() {
                                 out.push_str(&format!("    params: [\n"));
-                                for param_index in &fn_call.parameters {
-                                    out.push_str(&format!("      {}\n", *param_index));
+                                for (i, param_index) in fn_call.parameters.iter().enumerate() {
+                                    out.push_str(&format!("      {}", *param_index));
+                                    if i < fn_call.parameters.len() - 1 {
+                                        out.push_str(&format!(",\n"));
+                                    }
                                 }
-                                out.push_str(&format!("    ]\n"));
+                                out.push_str(&format!("    \n]\n"));
                             }
                         }
                         ValueExpr::BinaryOp(op) => {
@@ -236,10 +244,14 @@ impl<'a> Ast<'a> {
                     }
                     if !fn_proto.parameters.is_empty() {
                         out.push_str(&format!("    params: [\n"));
-                        for param_index in &fn_proto.parameters {
-                            out.push_str(&format!("      {}\n", *param_index));
+
+                        for (i, param_index) in fn_proto.parameters.iter().enumerate() {
+                            out.push_str(&format!("      {}", *param_index));
+                            if i < fn_proto.parameters.len() - 1 {
+                                out.push_str(&format!(",\n"));
+                            }
                         }
-                        out.push_str(&format!("    ]\n"));
+                        out.push_str(&format!("    \n]\n"));
                     }
                     out.push_str("  }\n");
                 }

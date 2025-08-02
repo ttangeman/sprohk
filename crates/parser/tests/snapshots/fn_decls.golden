@@ -78,9 +78,9 @@ node 10 {
     name: x
     ret_type_expr: 9
     params: [
-      6
-      8
-    ]
+      6,
+      8    
+]
   }
 }
 node 11 {
@@ -111,16 +111,14 @@ node 14 {
   data: {
     name: y
     params: [
-      13
-    ]
+      13    
+]
   }
 }
 node 15 {
   kind: Block
   tokens: [33..35]
   data: {
-    statements: [
-    ]
   }
 }
 node 16 {
