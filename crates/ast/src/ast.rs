@@ -160,7 +160,7 @@ impl<'a> Ast<'a> {
                                 out.push_str(&format!(",\n"));
                             }
                         }
-                        out.push_str("    \n]\n");
+                        out.push_str("\n    ]\n");
                     }
 
                     out.push_str("  }\n");
@@ -202,7 +202,7 @@ impl<'a> Ast<'a> {
                                         out.push_str(&format!(",\n"));
                                     }
                                 }
-                                out.push_str(&format!("    \n]\n"));
+                                out.push_str(&format!("\n    ]\n"));
                             }
                         }
                         ValueExpr::BinaryOp(op) => {
@@ -251,7 +251,7 @@ impl<'a> Ast<'a> {
                                 out.push_str(&format!(",\n"));
                             }
                         }
-                        out.push_str(&format!("    \n]\n"));
+                        out.push_str(&format!("\n    ]\n"));
                     }
                     out.push_str("  }\n");
                 }
