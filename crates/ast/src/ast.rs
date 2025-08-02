@@ -189,11 +189,13 @@ impl<'a> Ast<'a> {
                         ValueExpr::Function(fn_call) => {
                             let name_str = self.get_src(fn_call.name).unwrap_or("");
                             out.push_str(&format!("    function: '{}'\n", name_str));
-                            out.push_str(&format!("    params: [\n"));
-                            for param_index in &fn_call.parameters {
-                                out.push_str(&format!("      {}\n", *param_index));
+                            if !fn_call.parameters.is_empty() {
+                                out.push_str(&format!("    params: [\n"));
+                                for param_index in &fn_call.parameters {
+                                    out.push_str(&format!("      {}\n", *param_index));
+                                }
+                                out.push_str(&format!("    ]\n"));
                             }
-                            out.push_str(&format!("    ]\n"));
                         }
                         ValueExpr::BinaryOp(op) => {
                             let op_str = op.kind.as_str();
@@ -231,6 +233,13 @@ impl<'a> Ast<'a> {
                     out.push_str(&format!("    name: {}\n", name_str));
                     if let Some(type_index) = fn_proto.ret_type_expr {
                         out.push_str(&format!("    ret_type_expr: {}\n", type_index));
+                    }
+                    if !fn_proto.parameters.is_empty() {
+                        out.push_str(&format!("    params: [\n"));
+                        for param_index in &fn_proto.parameters {
+                            out.push_str(&format!("      {}\n", *param_index));
+                        }
+                        out.push_str(&format!("    ]\n"));
                     }
                     out.push_str("  }\n");
                 }

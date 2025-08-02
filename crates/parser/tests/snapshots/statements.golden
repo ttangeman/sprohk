@@ -26,6 +26,9 @@ node 3 {
   data: {
     name: foo
     ret_type_expr: 2
+    params: [
+      1
+    ]
   }
 }
 node 4 {

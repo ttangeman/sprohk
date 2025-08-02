@@ -77,6 +77,10 @@ node 10 {
   data: {
     name: x
     ret_type_expr: 9
+    params: [
+      6
+      8
+    ]
   }
 }
 node 11 {
@@ -106,6 +110,9 @@ node 14 {
   tokens: [26..33]
   data: {
     name: y
+    params: [
+      13
+    ]
   }
 }
 node 15 {
