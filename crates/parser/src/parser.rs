@@ -1,8 +1,8 @@
 use smallvec::SmallVec;
 use sprohk_ast::{
     Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnParameterList, FnPrototype, Function,
-    NodeIndex, NodeKind, OpKind, Precedence, StatementList, TokenIndex, TypeExpr, ValueExpr,
-    VarDecl,
+    NodeIndex, NodeKind, OpKind, Precedence, StatementList, TokenIndex, TypeExpr, UnaryOp,
+    ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -143,8 +143,22 @@ impl Parser {
     ) -> Result<NodeIndex, ParserError> {
         let expr_start = self.at();
         let mut lhs = match self.peek_token(ast) {
-            Some(token) if token.is_operator() => {
-                todo!("unary ops");
+            Some(token) if token.is_unary_operator() => {
+                let start = self.at();
+                self.advance();
+
+                // Parse rhs expression, using prefix precedence
+                let rhs = self.parse_value_expr_pratt(ast, Precedence::Prefix)?;
+
+                // Set lhs to unary op and continue parsing rest of expression
+                Ok(add_value_expr(
+                    ast,
+                    self.span_from(start),
+                    ValueExpr::UnaryOp(UnaryOp {
+                        kind: OpKind::from_token_kind(token).unwrap(),
+                        rhs,
+                    }),
+                ))
             }
             Some(token) if token.is_literal() => {
                 let start = self.at();
@@ -183,8 +197,8 @@ impl Parser {
         loop {
             let op = match self.peek_token(ast) {
                 Some(token) if token.is_operator() => Ok(OpKind::from_token_kind(token).unwrap()),
-                // Terminate upon seeing a delimiter. Semicolon is considered a statement terminator,
-                // comma is an expression list terminator, and rparen is a function list terminator and
+                // Terminate upon seeing a delimiter. Semicolon is considered a statement delimiter,
+                // comma is an expression list delimiter, and rparen is a function list terminator and
                 // is not handled as a precedence marker at this stage
                 Some(TokenKind::Semicolon) | Some(TokenKind::Comma) | Some(TokenKind::RParen) => {
                     break;

@@ -25,6 +25,9 @@ pub enum Precedence {
 
     Sum = 60,
     Product = 70,
+
+    // Unary op prefix
+    Prefix = 90,
 }
 
 impl OpKind {
@@ -79,5 +82,14 @@ pub struct BinaryOp {
 
     // Left and right-hand side expression node indices
     pub lhs: NodeIndex,
+    pub rhs: NodeIndex,
+}
+
+/// Simple unary operation (e.g., !x)
+#[derive(Debug)]
+pub struct UnaryOp {
+    pub kind: OpKind,
+
+    // Right-hand side expression node indices
     pub rhs: NodeIndex,
 }

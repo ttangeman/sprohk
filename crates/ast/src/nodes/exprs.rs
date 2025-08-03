@@ -1,4 +1,4 @@
-use crate::{BinaryOp, FnParameterList, TokenIndex};
+use crate::{BinaryOp, FnParameterList, TokenIndex, UnaryOp};
 
 /// Any expression that might yield a runtime value.
 #[derive(Debug)]
@@ -10,8 +10,10 @@ pub enum ValueExpr {
     /// Function call expr
     Function(FnCallExpr),
 
-    /// Binary operator
+    /// Binary operator (infix)
     BinaryOp(BinaryOp),
+    /// Unary operator (prefix)
+    UnaryOp(UnaryOp),
 }
 
 /// Represents a type expression for assigning a type, which is

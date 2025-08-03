@@ -211,6 +211,11 @@ impl<'a> Ast<'a> {
                             out.push_str(&format!("    lhs: {}\n", op.lhs));
                             out.push_str(&format!("    rhs: {}\n", op.rhs));
                         }
+                        ValueExpr::UnaryOp(op) => {
+                            let op_str = op.kind.as_str();
+                            out.push_str(&format!("    op: '{}'\n", op_str));
+                            out.push_str(&format!("    rhs: {}\n", op.rhs));
+                        }
                     }
                     out.push_str("  }\n");
                 }

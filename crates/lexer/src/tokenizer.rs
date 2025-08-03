@@ -143,6 +143,14 @@ impl TokenKind {
                 | TokenKind::Greater
         )
     }
+
+    #[inline]
+    pub fn is_unary_operator(self) -> bool {
+        matches!(
+            self,
+            TokenKind::Minus | TokenKind::Plus | TokenKind::Star | TokenKind::Not
+        )
+    }
 }
 
 /// Represents a token with its kind and source location.
