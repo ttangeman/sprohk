@@ -134,3 +134,91 @@ node 16 {
     assign_expr: 15
   }
 }
+node 17 {
+  kind: ValueExpr
+  tokens: [31..32]
+  data: {
+    literal: '1'
+  }
+}
+node 18 {
+  kind: ValueExpr
+  tokens: [33..34]
+  data: {
+    literal: '2'
+  }
+}
+node 19 {
+  kind: ValueExpr
+  tokens: [31..34]
+  data: {
+    op: '+'
+    lhs: 17
+    rhs: 18
+  }
+}
+node 20 {
+  kind: ValueExpr
+  tokens: [29..35]
+  data: {
+    op: '-'
+    rhs: 19
+  }
+}
+node 21 {
+  kind: VarDecl
+  tokens: [26..36]
+  data: {
+    specifier: Var
+    name: 'd'
+    assign_expr: 20
+  }
+}
+node 22 {
+  kind: ValueExpr
+  tokens: [39..40]
+  data: {
+    literal: '2'
+  }
+}
+node 23 {
+  kind: ValueExpr
+  tokens: [42..43]
+  data: {
+    literal: '4'
+  }
+}
+node 24 {
+  kind: ValueExpr
+  tokens: [44..45]
+  data: {
+    literal: '4'
+  }
+}
+node 25 {
+  kind: ValueExpr
+  tokens: [42..45]
+  data: {
+    op: '+'
+    lhs: 23
+    rhs: 24
+  }
+}
+node 26 {
+  kind: ValueExpr
+  tokens: [39..46]
+  data: {
+    op: '*'
+    lhs: 22
+    rhs: 25
+  }
+}
+node 27 {
+  kind: VarDecl
+  tokens: [36..47]
+  data: {
+    specifier: Var
+    name: 'e'
+    assign_expr: 26
+  }
+}

@@ -190,6 +190,17 @@ impl Parser {
                     ))
                 }
             }
+            Some(TokenKind::LParen) => {
+                // Consume '('
+                self.advance();
+
+                // Parse inner expression, resetting the precedence
+                let inner = self.parse_value_expr_pratt(ast, Precedence::Lowest)?;
+                // Expect ')'
+                self.expect(ast, TokenKind::RParen)?;
+
+                Ok(inner)
+            }
             Some(token) => Err(ParserError::UnexpectedToken(token)),
             None => Err(ParserError::UnexpectedEof),
         }?;
