@@ -2,7 +2,6 @@ use crate::nodes::*;
 
 use bumpalo::{Bump, collections::Vec as BumpVec};
 use sprohk_core::Span;
-use std::cmp::max;
 
 pub type DataIndex = u32;
 
@@ -51,27 +50,27 @@ impl<'arena> NodeData<'arena> {
             parameters: BumpVec::new_in(arena),
         }
     }
-
+    
     /// Reserves space in the node data arena using an estimate of the number
     /// of nodes to be populated in the AST.
     pub fn reserve_node_data(&mut self, nodes_estimate: usize) {
-        // Rough guess of distribution of AST node types, with some
-        // minimum values as these are all arena allocated.
-        let expr_count = max(nodes_estimate / 2, 1024);
-        let block_count = max(expr_count / 8, 256);
-        let function_count = max(block_count / 3, 128);
-        let var_count = max(block_count, 512);
+        // Rough guess of distribution of AST node types
+        let expr_count = nodes_estimate / 2; // min 512
+        let block_count = expr_count / 4; // min 128
+        let function_count = block_count / 4; // min 32
+        let var_count = block_count / 2; // min 64
+        let param_count = function_count * 2; // min 64
 
         self.value_exprs.reserve(expr_count);
         self.blocks.reserve(block_count);
         self.functions.reserve(function_count);
         self.fn_protos.reserve(function_count);
-        self.fn_params.reserve(function_count * 2);
+        self.fn_params.reserve(param_count);
         self.var_decls.reserve(var_count);
         self.type_exprs.reserve(var_count / 2);
 
-        self.statements.reserve(self.blocks.len() * 2);
-        self.parameters.reserve(self.fn_params.len())
+        self.statements.reserve(block_count);
+        self.parameters.reserve(param_count)
     }
 
     pub fn add_block(&mut self, block: Block) -> DataIndex {
@@ -127,10 +126,7 @@ impl<'arena> NodeData<'arena> {
     }
 
     /// Extends the global parameter list with the incoming contiguous range of items
-    pub fn push_parameters(
-        &mut self,
-        params: impl IntoIterator<Item = NodeIndex>,
-    ) -> ParameterSpan {
+    pub fn push_parameters(&mut self, params: impl IntoIterator<Item = NodeIndex>) -> ParameterSpan {
         let start = self.parameters.len();
         self.parameters.extend(params);
         ParameterSpan(Span {
