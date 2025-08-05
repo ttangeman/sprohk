@@ -50,7 +50,7 @@ impl<'arena> NodeData<'arena> {
             parameters: BumpVec::new_in(arena),
         }
     }
-    
+
     /// Reserves space in the node data arena using an estimate of the number
     /// of nodes to be populated in the AST.
     pub fn reserve_node_data(&mut self, nodes_estimate: usize) {
@@ -126,7 +126,10 @@ impl<'arena> NodeData<'arena> {
     }
 
     /// Extends the global parameter list with the incoming contiguous range of items
-    pub fn push_parameters(&mut self, params: impl IntoIterator<Item = NodeIndex>) -> ParameterSpan {
+    pub fn push_parameters(
+        &mut self,
+        params: impl IntoIterator<Item = NodeIndex>,
+    ) -> ParameterSpan {
         let start = self.parameters.len();
         self.parameters.extend(params);
         ParameterSpan(Span {

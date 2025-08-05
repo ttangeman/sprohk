@@ -66,8 +66,10 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
 
     #[cfg(debug_assertions)]
     println!(
-        "AST Allocated {} MB",
-        ast.arena().allocated_bytes() as f32 / 1024.0 / 1024.0
+        "AST Allocated {} MB ({} tokens, {} nodes)",
+        ast.arena().allocated_bytes() as f32 / 1024.0 / 1024.0,
+        ast.tokens().len(),
+        ast.nodes().len(),
     );
 
     Ok(ast)
