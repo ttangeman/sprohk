@@ -1,38 +1,77 @@
 use crate::nodes::*;
 
+use bumpalo::{Bump, collections::Vec as BumpVec};
+use sprohk_core::Span;
+use std::cmp::max;
+
 pub type DataIndex = u32;
 
-/// Stores metadata for AST nodes.
-/// Note that it does not use the arena allocator like lexical tokens or
-/// AST information, due to the higher density of data that is encoded.
+#[derive(Clone, Copy, Debug)]
+pub struct StatementSpan(Span);
+
+#[derive(Clone, Copy, Debug)]
+pub struct ParameterSpan(Span);
+
+/// Stores metadata for AST nodes as a structure of arrays (arenas).
+/// This allows for efficient iteration of specfic node data types for
+/// later compiler passes.
 #[derive(Debug)]
-pub struct NodeData {
-    blocks: Vec<Block>,
-    var_decls: Vec<VarDecl>,
+pub struct NodeData<'arena> {
+    blocks: BumpVec<'arena, Block>,
+    var_decls: BumpVec<'arena, VarDecl>,
 
-    value_exprs: Vec<ValueExpr>,
-    type_exprs: Vec<TypeExpr>,
+    value_exprs: BumpVec<'arena, ValueExpr>,
+    type_exprs: BumpVec<'arena, TypeExpr>,
 
-    functions: Vec<Function>,
-    fn_protos: Vec<FnPrototype>,
-    fn_params: Vec<FnParameter>,
+    functions: BumpVec<'arena, Function>,
+    fn_protos: BumpVec<'arena, FnPrototype>,
+    fn_params: BumpVec<'arena, FnParameter>,
+
+    // Statement arena; used to store ranges of indices for blocks.
+    statements: BumpVec<'arena, NodeIndex>,
+    // Function parameters map into a span of node indices
+    parameters: BumpVec<'arena, NodeIndex>,
 }
 
 // Note on getters: runtime checking of the `NodeKind` is maintained for the node data to
 // avoid easy mistakes when accessing the data. Single accesses are considered the slow
 // path by design, as the node data `Vec`s are intended to be used for bulk operations,
 // so getters are mostly provided for convenience in tests or debugging.
-impl NodeData {
-    pub fn new() -> NodeData {
-        NodeData {
-            blocks: Vec::new(),
-            var_decls: Vec::new(),
-            value_exprs: Vec::new(),
-            type_exprs: Vec::new(),
-            functions: Vec::new(),
-            fn_protos: Vec::new(),
-            fn_params: Vec::new(),
+impl<'arena> NodeData<'arena> {
+    pub fn new(arena: &'arena Bump) -> Self {
+        Self {
+            blocks: BumpVec::new_in(arena),
+            var_decls: BumpVec::new_in(arena),
+            value_exprs: BumpVec::new_in(arena),
+            type_exprs: BumpVec::new_in(arena),
+            functions: BumpVec::new_in(arena),
+            fn_protos: BumpVec::new_in(arena),
+            fn_params: BumpVec::new_in(arena),
+            statements: BumpVec::new_in(arena),
+            parameters: BumpVec::new_in(arena),
         }
+    }
+
+    /// Reserves space in the node data arena using an estimate of the number
+    /// of nodes to be populated in the AST.
+    pub fn reserve_node_data(&mut self, nodes_estimate: usize) {
+        // Rough guess of distribution of AST node types, with some
+        // minimum values as these are all arena allocated.
+        let expr_count = max(nodes_estimate / 2, 1024);
+        let block_count = max(expr_count / 8, 256);
+        let function_count = max(block_count / 3, 128);
+        let var_count = max(block_count, 512);
+
+        self.value_exprs.reserve(expr_count);
+        self.blocks.reserve(block_count);
+        self.functions.reserve(function_count);
+        self.fn_protos.reserve(function_count);
+        self.fn_params.reserve(function_count * 2);
+        self.var_decls.reserve(var_count);
+        self.type_exprs.reserve(var_count / 2);
+
+        self.statements.reserve(self.blocks.len() * 2);
+        self.parameters.reserve(self.fn_params.len())
     }
 
     pub fn add_block(&mut self, block: Block) -> DataIndex {
@@ -75,6 +114,37 @@ impl NodeData {
         let index = self.fn_params.len() as DataIndex;
         self.fn_params.push(fn_param);
         index
+    }
+
+    /// Extends the global statement list with the incoming contiguous range of items
+    pub fn push_statements(&mut self, stmts: impl IntoIterator<Item = NodeIndex>) -> StatementSpan {
+        let start = self.statements.len();
+        self.statements.extend(stmts);
+        StatementSpan(Span {
+            start,
+            end: self.statements.len(),
+        })
+    }
+
+    /// Extends the global parameter list with the incoming contiguous range of items
+    pub fn push_parameters(
+        &mut self,
+        params: impl IntoIterator<Item = NodeIndex>,
+    ) -> ParameterSpan {
+        let start = self.parameters.len();
+        self.parameters.extend(params);
+        ParameterSpan(Span {
+            start,
+            end: self.parameters.len(),
+        })
+    }
+
+    pub fn stmt_slice(&self, span: StatementSpan) -> &[NodeIndex] {
+        &self.statements[span.0.start..span.0.end]
+    }
+
+    pub fn param_slice(&self, span: ParameterSpan) -> &[NodeIndex] {
+        &&self.parameters[span.0.start..span.0.end]
     }
 
     pub fn get_block(&self, node: Node) -> &Block {

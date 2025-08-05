@@ -1,8 +1,7 @@
-use smallvec::SmallVec;
+use bumpalo::collections::Vec as BumpVec;
 use sprohk_ast::{
-    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnParameterList, FnPrototype, Function,
-    NodeIndex, NodeKind, OpKind, Precedence, StatementList, TokenIndex, TypeExpr, UnaryOp,
-    ValueExpr, VarDecl,
+    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function, NodeIndex, NodeKind,
+    OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -256,7 +255,7 @@ impl Parser {
             TokenKind::LParen
         );
 
-        let mut params = FnParameterList::new();
+        let mut params = BumpVec::with_capacity_in(8, ast.arena());
 
         while let Some(kind) = self.peek_token(ast) {
             match kind {
@@ -287,7 +286,7 @@ impl Parser {
 
         Ok(FnCallExpr {
             name: name_index,
-            parameters: params,
+            parameters: ast.push_parameters(params),
         })
     }
 
@@ -352,7 +351,7 @@ impl Parser {
         // Advance past open brace
         self.advance();
 
-        let mut statements = StatementList::new();
+        let mut statements = BumpVec::with_capacity_in(16, ast.arena());
 
         while let Some(kind) = ast.get_token_kind(self.at()) {
             match kind {
@@ -361,13 +360,13 @@ impl Parser {
                     // Consume terminating token
                     self.advance();
 
+                    let block = Block {
+                        statements: ast.push_statements(statements),
+                    };
                     return Ok(ast.add_node_with_data(
                         NodeKind::Block,
                         self.span_from(start),
-                        |node_data| {
-                            let block = Block { statements };
-                            node_data.add_block(block)
-                        },
+                        |node_data| node_data.add_block(block),
                     ));
                 }
                 _ => {
@@ -514,18 +513,18 @@ impl Parser {
                     let fn_proto = FnPrototype {
                         name,
                         ret_type_expr,
-                        parameters: SmallVec::new(),
+                        parameters: None,
                     };
                     node_data.add_fn_prototype(fn_proto)
                 }),
             )
         } else {
-            let mut parameters = FnParameterList::new();
+            let mut params = BumpVec::with_capacity_in(8, ast.arena());
 
             // Parse function parameters until terminating ')'
             'params: loop {
                 let param_index = self.parse_fn_parameter(ast)?;
-                parameters.push(param_index);
+                params.push(param_index);
 
                 match ast.get_token_kind(self.at()) {
                     // Continue parsing parameters
@@ -547,13 +546,13 @@ impl Parser {
             // Parse optional return type expr
             let ret_type_expr = self.parse_return_type_expr(ast)?;
 
+            let fn_proto = FnPrototype {
+                name,
+                ret_type_expr,
+                parameters: Some(ast.push_parameters(params)),
+            };
             Ok(
                 ast.add_node_with_data(NodeKind::FnPrototype, self.span_from(start), |node_data| {
-                    let fn_proto = FnPrototype {
-                        name,
-                        ret_type_expr,
-                        parameters,
-                    };
                     node_data.add_fn_prototype(fn_proto)
                 }),
             )

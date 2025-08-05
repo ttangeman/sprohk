@@ -33,7 +33,7 @@ fn run(source_file_path: String) -> ExitCode {
     };
 
     let sources = vec![source_file];
-    let arena = Bump::with_capacity(1 * 1024 * 1024); // 1 MB arena for AST allocation
+    let arena = Bump::with_capacity(16 * 1024 * 1024); // minimum of 16MB for arena 
     let ast = parse_ast(&arena, sources);
 
     match ast {

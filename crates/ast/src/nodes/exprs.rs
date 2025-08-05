@@ -1,4 +1,4 @@
-use crate::{BinaryOp, FnParameterList, TokenIndex, UnaryOp};
+use crate::{BinaryOp, ParameterSpan, TokenIndex, UnaryOp};
 
 /// Any expression that might yield a runtime value.
 #[derive(Debug)]
@@ -39,7 +39,6 @@ pub enum TypeExpr {
 pub struct FnCallExpr {
     /// Token index to function name invocation
     pub name: TokenIndex,
-    /// List of function parameter expression node indices.
-    /// Uses SBO to minimize small allocations   
-    pub parameters: FnParameterList,
+    /// Span of function parameter expression node indices.
+    pub parameters: ParameterSpan,
 }

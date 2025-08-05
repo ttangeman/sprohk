@@ -6,8 +6,8 @@ pub use ops::*;
 
 use crate::ast::TokenIndex;
 use crate::node_data::DataIndex;
+use crate::{ParameterSpan, StatementSpan};
 
-use smallvec::SmallVec;
 use sprohk_lexer::TokenKind;
 
 #[repr(u32)]
@@ -36,18 +36,14 @@ pub struct Node {
     pub data_index: DataIndex,
 }
 
-pub type StatementList = SmallVec<[NodeIndex; 12]>;
-
 /// Generic node representing a block of code for a function,
 /// statement, or creating a new scope. The block derives a list of
 /// statements that can be provided semantic meaning through the node
 /// that associates it as a child node.
 #[derive(Debug)]
 pub struct Block {
-    // List of statements in the block. Uses SBO for at least 12
-    // statements, as this gives good leeway to prevent allocation
-    // and the whole list can fit in a single cache line.
-    pub statements: StatementList,
+    // Span of statement indices in the block
+    pub statements: StatementSpan,
 }
 
 /// Variable declaration is a statement with an optional type specifier
@@ -83,8 +79,6 @@ pub struct Function {
     pub block: Option<NodeIndex>,
 }
 
-pub type FnParameterList = SmallVec<[NodeIndex; 8]>;
-
 /// Function prototype is all of the expressions and metadata associated
 /// with the call definition for a function declaration.
 #[derive(Debug)]
@@ -95,9 +89,7 @@ pub struct FnPrototype {
     pub ret_type_expr: Option<NodeIndex>,
 
     // Indices to each `FunctionParameter` in the argument list.
-    // Uses SBO for at least 8 parameters, as it is uncommon for
-    // functions to exceed that.
-    pub parameters: FnParameterList,
+    pub parameters: Option<ParameterSpan>,
 }
 
 /// Function parameter for a function prototype

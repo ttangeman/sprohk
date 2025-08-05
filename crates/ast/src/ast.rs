@@ -25,7 +25,7 @@ pub struct Ast<'a> {
     // The kind of each node in the AST.
     nodes: BumpVec<'a, Node>,
     // Manages the metadata for each node in the AST.
-    node_data: NodeData,
+    node_data: NodeData<'a>,
     // The data associated with each node, such as variable indices or other metadata.
     // Span of tokens the node covers (indices).
     // Note that the end of the range is exclusive.
@@ -40,7 +40,7 @@ impl<'a> Ast<'a> {
             modules: HashMap::new(),
             tokens: BumpVec::new_in(arena),
             nodes: BumpVec::new_in(arena),
-            node_data: NodeData::new(),
+            node_data: NodeData::new(arena),
             node_spans: BumpVec::new_in(arena),
         }
     }
@@ -83,15 +83,34 @@ impl<'a> Ast<'a> {
         node_index
     }
 
+    /// Pushes a contiguous range of parameters to the global parameter list
+    pub fn push_parameters(
+        &mut self,
+        params: impl IntoIterator<Item = NodeIndex>,
+    ) -> ParameterSpan {
+        self.node_data.push_parameters(params)
+    }
+
+    /// Pushes a contiguous range of statements to the global statement list
+    pub fn push_statements(&mut self, stmts: impl IntoIterator<Item = NodeIndex>) -> StatementSpan {
+        self.node_data.push_statements(stmts)
+    }
+
     /// Uses the allocated token count to reserve space for nodes.
     /// Typically called before adding nodes to the AST and after
     /// adding all tokens.
     pub fn reserve_nodes(&mut self) {
-        // Guess that each node corresponds to, on average, 2 tokens.
-        let node_count = std::cmp::max(self.tokens.len() / 2, 8);
+        // Guess that each node corresponds to, on average, 2 tokens,
+        // and allocating a minimum of 1024 nodes.
+        let node_count = std::cmp::max(self.tokens.len() / 2, 1024);
 
         self.nodes.reserve(node_count);
         self.node_spans.reserve(node_count);
+        self.node_data.reserve_node_data(node_count);
+    }
+
+    pub fn arena(&self) -> &'a Bump {
+        self.arena
     }
 
     pub fn nodes(&self) -> &[Node] {
@@ -152,11 +171,12 @@ impl<'a> Ast<'a> {
                     let block = self.node_data.get_block(*node);
                     out.push_str("  data: {\n");
 
-                    if !block.statements.is_empty() {
+                    let statements = self.node_data.stmt_slice(block.statements);
+                    if !statements.is_empty() {
                         out.push_str("    statements: [\n");
-                        for (i, stmt_index) in block.statements.iter().enumerate() {
+                        for (i, stmt_index) in statements.iter().enumerate() {
                             out.push_str(&format!("      {}", *stmt_index));
-                            if i < block.statements.len() - 1 {
+                            if i < statements.len() - 1 {
                                 out.push_str(&format!(",\n"));
                             }
                         }
@@ -194,11 +214,13 @@ impl<'a> Ast<'a> {
                         ValueExpr::Function(fn_call) => {
                             let name_str = self.get_src(fn_call.name).unwrap_or("");
                             out.push_str(&format!("    function: '{}'\n", name_str));
-                            if !fn_call.parameters.is_empty() {
+
+                            let params = self.node_data.param_slice(fn_call.parameters);
+                            if !params.is_empty() {
                                 out.push_str(&format!("    params: [\n"));
-                                for (i, param_index) in fn_call.parameters.iter().enumerate() {
+                                for (i, param_index) in params.iter().enumerate() {
                                     out.push_str(&format!("      {}", *param_index));
-                                    if i < fn_call.parameters.len() - 1 {
+                                    if i < params.len() - 1 {
                                         out.push_str(&format!(",\n"));
                                     }
                                 }
@@ -247,12 +269,14 @@ impl<'a> Ast<'a> {
                     if let Some(type_index) = fn_proto.ret_type_expr {
                         out.push_str(&format!("    ret_type_expr: {}\n", type_index));
                     }
-                    if !fn_proto.parameters.is_empty() {
+
+                    if let Some(span) = fn_proto.parameters {
+                        let params = self.node_data.param_slice(span);
                         out.push_str(&format!("    params: [\n"));
 
-                        for (i, param_index) in fn_proto.parameters.iter().enumerate() {
+                        for (i, param_index) in params.iter().enumerate() {
                             out.push_str(&format!("      {}", *param_index));
-                            if i < fn_proto.parameters.len() - 1 {
+                            if i < params.len() - 1 {
                                 out.push_str(&format!(",\n"));
                             }
                         }
