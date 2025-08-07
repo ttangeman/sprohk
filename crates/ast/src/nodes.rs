@@ -1,8 +1,10 @@
 pub mod exprs;
 pub mod ops;
+pub mod statements;
 
 pub use exprs::*;
 pub use ops::*;
+pub use statements::*;
 
 use crate::ast::TokenIndex;
 use crate::node_data::DataIndex;
@@ -22,6 +24,8 @@ pub enum NodeKind {
     Function,
     FnPrototype,
     FnParameter,
+
+    IfStmt,
 }
 
 pub type NodeIndex = u32;

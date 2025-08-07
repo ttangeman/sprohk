@@ -293,6 +293,20 @@ impl<'a> Ast<'a> {
                     out.push_str(&format!("    type_expr: {}\n", type_index));
                     out.push_str("  }\n");
                 }
+                NodeKind::IfStmt => {
+                    let if_stmt = self.node_data.get_if_stmt(*node);
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    cond_expr: {}\n", if_stmt.condition_expr));
+                    out.push_str(&format!("    then_block: {}\n", if_stmt.then_block));
+                    if let Some(else_index) = if_stmt.else_node {
+                        if self.nodes[else_index as usize].kind == NodeKind::IfStmt {
+                            out.push_str(&format!("    else_if: {}\n", else_index));
+                        } else {
+                            out.push_str(&format!("    else_block: {}\n", else_index));
+                        }
+                    }
+                    out.push_str("  }\n");
+                }
 
                 #[allow(unreachable_patterns)]
                 _ => {

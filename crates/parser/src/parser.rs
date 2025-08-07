@@ -1,7 +1,7 @@
 use bumpalo::collections::Vec as BumpVec;
 use sprohk_ast::{
-    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function, NodeIndex, NodeKind,
-    OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr, VarDecl,
+    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function, IfStatement, NodeIndex,
+    NodeKind, OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -44,6 +44,17 @@ impl Parser {
 
     pub fn peek_token(&self, ast: &mut Ast) -> Option<TokenKind> {
         ast.get_token_kind(self.at())
+    }
+
+    /// Asserts that the expected token was present (i.e., it is part of the
+    /// caller contract and is assumed to be handled correctly). Returns the
+    /// start token index.
+    pub fn assert_token(&mut self, ast: &mut Ast, kind: TokenKind) -> TokenIndex {
+        debug_assert_eq!(self.peek_token(ast), Some(kind));
+
+        let start = self.at();
+        self.advance();
+        start
     }
 
     /// Returns the span given the start and current position of the cursor.
@@ -234,9 +245,14 @@ impl Parser {
             let op = match self.peek_token(ast) {
                 Some(token) if token.is_operator() => Ok(OpKind::from_token_kind(token).unwrap()),
                 // Terminate upon seeing a delimiter. Semicolon is considered a statement delimiter,
-                // comma is an expression list delimiter, and rparen is a function list terminator and
-                // is not handled as a precedence marker at this stage
-                Some(TokenKind::Semicolon) | Some(TokenKind::Comma) | Some(TokenKind::RParen) => {
+                // comma is an expression list delimiter, rparen is a function list terminator and
+                // is not handled as a precedence marker at this stage, and a left brace might be seen
+                // as part of a if statement.
+                Some(TokenKind::Semicolon)
+                | Some(TokenKind::Comma)
+                | Some(TokenKind::RParen)
+                | Some(TokenKind::LBrace) => {
+                    // Do not consume; allow caller to handle semantics.
                     break;
                 }
 
@@ -347,15 +363,54 @@ impl Parser {
         ))
     }
 
+    /// Parses an if-statement inside of a block.
+    /// Expects the 'if' token to _not_ be consumed by caller.
+    fn parse_if_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.assert_token(ast, TokenKind::If);
+
+        // Parse root if
+        let condition_expr = self.parse_value_expr(ast)?;
+        let then_block = self.parse_block(ast)?;
+
+        // Check for else block or else-if chain
+        let else_node = if self.accept(ast, TokenKind::Else).is_some() {
+            match self.peek_token(ast) {
+                Some(TokenKind::If) => Some(self.parse_if_statement(ast)?),
+                Some(TokenKind::LBrace) => Some(self.parse_block(ast)?),
+
+                Some(TokenKind::Eof) | None => return Err(ParserError::UnexpectedEof),
+                Some(kind) => return Err(ParserError::UnexpectedToken(kind)),
+            }
+        } else {
+            None
+        };
+
+        Ok(
+            ast.add_node_with_data(NodeKind::IfStmt, self.span_from(start), |node_data| {
+                let if_stmt = IfStatement {
+                    condition_expr,
+                    then_block,
+                    else_node,
+                };
+                node_data.add_if_statement(if_stmt)
+            }),
+        )
+    }
+
     /// Parse a statement -- i.e., an independent line of execution with respect to
     /// a code block. Statements contain some number of expressions that may or may not
     /// yield values or have side effects.
-    pub fn parse_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+    fn parse_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         while let Some(kind) = ast.get_token_kind(self.at()) {
             match kind {
                 TokenKind::Var | TokenKind::Const | TokenKind::Let => {
                     let var_decl_index = self.parse_var_decl(ast, kind)?;
                     return Ok(var_decl_index);
+                }
+
+                TokenKind::If => {
+                    let if_stmt_index = self.parse_if_statement(ast)?;
+                    return Ok(if_stmt_index);
                 }
 
                 TokenKind::Eof => return Err(ParserError::UnexpectedEof),
@@ -370,13 +425,7 @@ impl Parser {
     /// a new scope in valid contexts. Assumes that the opening brace has already
     /// been seen, but _not_ consumed by caller.
     pub fn parse_block(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
-        let start = self.at();
-
-        // Assert contract with open brace
-        debug_assert!(ast.get_token_kind(start) == Some(TokenKind::LBrace));
-        // Advance past open brace
-        self.advance();
-
+        let start = self.expect(ast, TokenKind::LBrace)?;
         let mut statements = BumpVec::with_capacity_in(16, ast.arena());
 
         while let Some(kind) = ast.get_token_kind(self.at()) {

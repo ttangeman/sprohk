@@ -1,3 +1,12 @@
 fn foo(x: i32) -> i32 {
     var y: u32 = 42;
+    var x = 0;
+
+    if y == 42 {
+        // x = 1;
+    } else if y > 42 {
+        // x = 2;
+    } else {
+        // x = 3;
+    }
 }

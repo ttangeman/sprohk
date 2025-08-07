@@ -26,6 +26,8 @@ pub struct NodeData<'arena> {
     fn_protos: BumpVec<'arena, FnPrototype>,
     fn_params: BumpVec<'arena, FnParameter>,
 
+    if_stmts: BumpVec<'arena, IfStatement>,
+
     // Statement arena; used to store ranges of indices for blocks.
     statements: BumpVec<'arena, NodeIndex>,
     // Function parameters map into a span of node indices
@@ -46,6 +48,7 @@ impl<'arena> NodeData<'arena> {
             functions: BumpVec::new_in(arena),
             fn_protos: BumpVec::new_in(arena),
             fn_params: BumpVec::new_in(arena),
+            if_stmts: BumpVec::new_in(arena),
             statements: BumpVec::new_in(arena),
             parameters: BumpVec::new_in(arena),
         }
@@ -60,6 +63,7 @@ impl<'arena> NodeData<'arena> {
         let function_count = block_count / 4; // min 32
         let var_count = block_count / 2; // min 64
         let param_count = function_count * 2; // min 64
+        let if_count = function_count; // min 32
 
         self.value_exprs.reserve(expr_count);
         self.blocks.reserve(block_count);
@@ -68,6 +72,7 @@ impl<'arena> NodeData<'arena> {
         self.fn_params.reserve(param_count);
         self.var_decls.reserve(var_count);
         self.type_exprs.reserve(var_count / 2);
+        self.if_stmts.reserve(if_count);
 
         self.statements.reserve(block_count);
         self.parameters.reserve(param_count)
@@ -112,6 +117,12 @@ impl<'arena> NodeData<'arena> {
     pub fn add_fn_parameter(&mut self, fn_param: FnParameter) -> DataIndex {
         let index = self.fn_params.len() as DataIndex;
         self.fn_params.push(fn_param);
+        index
+    }
+
+    pub fn add_if_statement(&mut self, stmt: IfStatement) -> DataIndex {
+        let index = self.if_stmts.len() as DataIndex;
+        self.if_stmts.push(stmt);
         index
     }
 
@@ -179,5 +190,10 @@ impl<'arena> NodeData<'arena> {
     pub fn get_fn_parameter(&self, node: Node) -> &FnParameter {
         assert_eq!(node.kind, NodeKind::FnParameter);
         &self.fn_params[node.data_index as usize]
+    }
+
+    pub fn get_if_stmt(&self, node: Node) -> &IfStatement {
+        assert_eq!(node.kind, NodeKind::IfStmt);
+        &self.if_stmts[node.data_index as usize]
     }
 }
