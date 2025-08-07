@@ -29,7 +29,9 @@ fn add_value_expr(ast: &mut Ast, span: Span, expr: ValueExpr) -> NodeIndex {
 
 impl Parser {
     pub fn new() -> Self {
-        Parser { cursor: 0 }
+        Parser {
+            cursor: TokenIndex(0),
+        }
     }
 
     /// Returns the current position of the cursor in the token stream.
@@ -39,7 +41,7 @@ impl Parser {
 
     /// Advances the cursor to the next token in the stream.
     pub fn advance(&mut self) {
-        self.cursor += 1;
+        self.cursor.0 += 1;
     }
 
     pub fn peek_token(&self, ast: &mut Ast) -> Option<TokenKind> {
@@ -61,7 +63,10 @@ impl Parser {
     /// The end of the span is exclusive.
     pub fn span_from(&self, start: TokenIndex) -> Span {
         let end = self.at();
-        Span { start, end }
+        Span {
+            start: start.0,
+            end: end.0,
+        }
     }
 
     /// Checks if the current token matches the expected token kind.
@@ -293,7 +298,7 @@ impl Parser {
     ) -> Result<FnCallExpr, ParserError> {
         debug_assert_eq!(ast.get_token_kind(name_index), Some(TokenKind::Identifier));
         debug_assert_eq!(
-            ast.get_token_kind(self.at() - 1).unwrap(),
+            ast.get_token_kind(TokenIndex(self.at().0 - 1)).unwrap(),
             TokenKind::LParen
         );
 

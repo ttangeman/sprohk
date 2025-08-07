@@ -8,7 +8,8 @@ use std::collections::HashMap;
 /// Represents the index of a token in the AST.
 /// Maps to primarily the token kind and its source location as
 /// they use uniform memory layout.
-pub type TokenIndex = usize;
+#[derive(Clone, Copy, Debug)]
+pub struct TokenIndex(pub usize);
 
 /// Provides the AST (Abstract Syntax Tree) for the input source code.
 /// Uses arena allocation for efficient memory management of AST nodes and data.
@@ -75,7 +76,7 @@ impl<'a> Ast<'a> {
         F: FnOnce(&mut NodeData) -> DataIndex,
     {
         let data_index = add_data(&mut self.node_data);
-        let node_index = self.nodes.len() as NodeIndex;
+        let node_index = NodeIndex::from(self.nodes.len());
 
         self.nodes.push(Node { kind, data_index });
         self.node_spans.push(span);
@@ -127,7 +128,7 @@ impl<'a> Ast<'a> {
 
     /// Retrieves the token
     pub fn get_token(&self, index: TokenIndex) -> Option<Token> {
-        self.tokens.get(index).cloned()
+        self.tokens.get(index.0).cloned()
     }
 
     /// Retrieves the token kind
@@ -142,7 +143,7 @@ impl<'a> Ast<'a> {
 
     /// Retrieves the slice of source code for the given token index.
     pub fn get_src(&self, index: TokenIndex) -> Option<&str> {
-        if let Some(src) = self.tokens.get(index).and_then(|tok| {
+        if let Some(src) = self.tokens.get(index.0).and_then(|tok| {
             let module = self.get_module(tok).unwrap();
             module.source_text().get(tok.loc.start..tok.loc.end)
         }) {
@@ -175,7 +176,7 @@ impl<'a> Ast<'a> {
                     if !statements.is_empty() {
                         out.push_str("    statements: [\n");
                         for (i, stmt_index) in statements.iter().enumerate() {
-                            out.push_str(&format!("      {}", *stmt_index));
+                            out.push_str(&format!("      {}", stmt_index));
                             if i < statements.len() - 1 {
                                 out.push_str(&format!(",\n"));
                             }
@@ -219,7 +220,7 @@ impl<'a> Ast<'a> {
                             if !params.is_empty() {
                                 out.push_str(&format!("    params: [\n"));
                                 for (i, param_index) in params.iter().enumerate() {
-                                    out.push_str(&format!("      {}", *param_index));
+                                    out.push_str(&format!("      {}", param_index));
                                     if i < params.len() - 1 {
                                         out.push_str(&format!(",\n"));
                                     }
@@ -299,7 +300,7 @@ impl<'a> Ast<'a> {
                     out.push_str(&format!("    cond_expr: {}\n", if_stmt.condition_expr));
                     out.push_str(&format!("    then_block: {}\n", if_stmt.then_block));
                     if let Some(else_index) = if_stmt.else_node {
-                        if self.nodes[else_index as usize].kind == NodeKind::IfStmt {
+                        if self.nodes[else_index.as_usize()].kind == NodeKind::IfStmt {
                             out.push_str(&format!("    else_if: {}\n", else_index));
                         } else {
                             out.push_str(&format!("    else_block: {}\n", else_index));
