@@ -123,6 +123,32 @@ impl Parser {
         None
     }
 
+    /// Parses a valid root node in a module (source file) for node types
+    /// that are only semantically valid at global scope and then recursively
+    /// descends for the rest of the tree.
+    pub fn parse(&mut self, ast: &mut Ast) -> Result<(), ParserError> {
+        while let Some(token) = ast.get_token(self.at()) {
+            match token.kind {
+                // Global variable
+                TokenKind::Var | TokenKind::Let | TokenKind::Const => {
+                    let node_index = self.parse_var_decl(ast, token.kind)?;
+                    ast.add_to_module_root(token, node_index);
+                }
+
+                // Top-level function
+                TokenKind::Fn => {
+                    let node_index = self.parse_function(ast)?;
+                    ast.add_to_module_root(token, node_index);
+                }
+
+                TokenKind::Eof => break,
+                _ => return Err(ParserError::UnexpectedToken(token.kind)),
+            }
+        }
+
+        Ok(())
+    }
+
     /// Parses an expression that yields a value.
     /// Valid in contexts such as assignment or intermediate operations.
     ///

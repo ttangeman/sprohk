@@ -41,28 +41,8 @@ pub fn parse_ast<'a>(arena: &'a Bump, sources: Vec<SourceFile>) -> Result<Ast<'a
     ast.reserve_nodes();
 
     // Begin parsing the tokens into AST nodes from the root set of nodes.
-    //
-    // Note that this is deliberately separated from statement parsing to
-    // handle the different semantics that might apply at global scope.
     let mut parser = Parser::new();
-    while let Some(token) = ast.get_token(parser.at()) {
-        match token.kind {
-            // Global variable
-            TokenKind::Var | TokenKind::Let | TokenKind::Const => {
-                let node_index = parser.parse_var_decl(&mut ast, token.kind)?;
-                ast.add_to_module_root(token, node_index);
-            }
-
-            // Top-level function
-            TokenKind::Fn => {
-                let node_index = parser.parse_function(&mut ast)?;
-                ast.add_to_module_root(token, node_index);
-            }
-
-            TokenKind::Eof => break,
-            _ => return Err(ParserError::UnexpectedToken(token.kind)),
-        }
-    }
+    parser.parse(&mut ast)?;
 
     #[cfg(debug_assertions)]
     println!(
