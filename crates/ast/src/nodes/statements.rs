@@ -39,3 +39,11 @@ pub enum LoopStatement {
     Break,
     Continue,
 }
+
+/// Return statement for a semantic value block or function
+#[derive(Debug)]
+pub struct ReturnStatement {
+    // Optional return expression (can have naked return
+    // for early return in void functions)
+    pub return_expr: Option<NodeIndex>,
+}

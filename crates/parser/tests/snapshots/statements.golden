@@ -345,22 +345,53 @@ node 43 {
   }
 }
 node 44 {
+  kind: ValueExpr
+  tokens: [69..70]
+  data: {
+    variable: 'y'
+  }
+}
+node 45 {
+  kind: ValueExpr
+  tokens: [71..72]
+  data: {
+    literal: '2'
+  }
+}
+node 46 {
+  kind: ValueExpr
+  tokens: [69..72]
+  data: {
+    op: '*'
+    lhs: 44
+    rhs: 45
+  }
+}
+node 47 {
+  kind: ReturnStmt
+  tokens: [68..73]
+  data: {
+    return_expr: 46
+  }
+}
+node 48 {
   kind: Block
-  tokens: [9..69]
+  tokens: [9..74]
   data: {
     statements: [
       6,
       26,
       37,
-      43
+      43,
+      47
     ]
   }
 }
-node 45 {
+node 49 {
   kind: Function
-  tokens: [0..69]
+  tokens: [0..74]
   data: {
     prototype: 3
-    block: 44
+    block: 48
   }
 }

@@ -1,8 +1,8 @@
 use bumpalo::collections::Vec as BumpVec;
 use sprohk_ast::{
     AssignStatement, Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function,
-    IfStatement, LoopStatement, NodeIndex, NodeKind, OpKind, Precedence, TokenIndex, TypeExpr,
-    UnaryOp, ValueExpr, VarDecl,
+    IfStatement, LoopStatement, NodeIndex, NodeKind, OpKind, Precedence, ReturnStatement,
+    TokenIndex, TypeExpr, UnaryOp, ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -465,6 +465,29 @@ impl Parser {
         )
     }
 
+    /// Parses a return statement for yielding a value to some outer block.
+    /// Expects that the return token has been seen but not consumed.
+    fn parse_return_stmt(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.assert_token(ast, TokenKind::Return);
+        let return_expr = if let Some(TokenKind::Semicolon) = self.peek_token(ast) {
+            // Empty return
+            self.advance();
+            None
+        } else {
+            // Return expression
+            let expr = self.parse_value_expr(ast, TokenKind::Semicolon)?;
+            self.expect(ast, TokenKind::Semicolon)?;
+            Some(expr)
+        };
+
+        Ok(
+            ast.add_node_with_data(NodeKind::ReturnStmt, self.span_from(start), |node_data| {
+                let return_stmt = ReturnStatement { return_expr };
+                node_data.add_return_statement(return_stmt)
+            }),
+        )
+    }
+
     /// Parse a statement -- i.e., an independent line of execution with respect to
     /// a code block. Statements contain some number of expressions that may or may not
     /// yield values or have side effects.
@@ -494,6 +517,11 @@ impl Parser {
                 | TokenKind::Continue => {
                     let loop_stmt = self.parse_loop_stmt(ast, kind)?;
                     return Ok(loop_stmt);
+                }
+                // Return statement
+                TokenKind::Return => {
+                    let return_stmt = self.parse_return_stmt(ast)?;
+                    return Ok(return_stmt);
                 }
 
                 TokenKind::Eof => return Err(ParserError::UnexpectedEof),

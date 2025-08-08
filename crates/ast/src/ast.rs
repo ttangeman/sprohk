@@ -338,6 +338,16 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                NodeKind::ReturnStmt => {
+                    let return_stmt = self.node_data.get_return_stmt(*node);
+                    out.push_str("  data: {\n");
+                    if let Some(return_expr) = return_stmt.return_expr {
+                        out.push_str(&format!("    return_expr: {}\n", return_expr));
+                    } else {
+                        out.push_str(&format!("    return_expr: void\n"));
+                    }
+                    out.push_str("  }\n");
+                }
 
                 #[allow(unreachable_patterns)]
                 _ => {
