@@ -42,7 +42,7 @@ node 5 {
   kind: ValueExpr
   tokens: [15..16]
   data: {
-    literal: '42'
+    literal: '0'
   }
 }
 node 6 {
@@ -57,118 +57,176 @@ node 6 {
 }
 node 7 {
   kind: ValueExpr
-  tokens: [20..21]
+  tokens: [18..19]
   data: {
-    literal: '0'
+    variable: 'x'
   }
 }
 node 8 {
-  kind: VarDecl
-  tokens: [17..22]
+  kind: ValueExpr
+  tokens: [20..21]
   data: {
-    specifier: Var
-    name: 'x'
-    assign_expr: 7
+    literal: '42'
   }
 }
 node 9 {
   kind: ValueExpr
-  tokens: [23..24]
+  tokens: [18..21]
   data: {
-    variable: 'y'
+    op: '=='
+    lhs: 7
+    rhs: 8
   }
 }
 node 10 {
   kind: ValueExpr
-  tokens: [25..26]
-  data: {
-    literal: '42'
-  }
-}
-node 11 {
-  kind: ValueExpr
-  tokens: [23..26]
-  data: {
-    op: '=='
-    lhs: 9
-    rhs: 10
-  }
-}
-node 12 {
-  kind: Block
-  tokens: [26..28]
-  data: {
-  }
-}
-node 13 {
-  kind: ValueExpr
-  tokens: [30..31]
+  tokens: [22..23]
   data: {
     variable: 'y'
   }
 }
+node 11 {
+  kind: ValueExpr
+  tokens: [24..25]
+  data: {
+    literal: '1'
+  }
+}
+node 12 {
+  kind: AssignStmt
+  tokens: [22..26]
+  data: {
+    lhs: 10
+    rhs: 11
+  }
+}
+node 13 {
+  kind: Block
+  tokens: [21..27]
+  data: {
+    statements: [
+      12
+    ]
+  }
+}
 node 14 {
   kind: ValueExpr
-  tokens: [32..33]
+  tokens: [29..30]
   data: {
-    literal: '42'
+    variable: 'x'
   }
 }
 node 15 {
   kind: ValueExpr
-  tokens: [30..33]
+  tokens: [31..32]
   data: {
-    op: '>'
-    lhs: 13
-    rhs: 14
+    literal: '42'
   }
 }
 node 16 {
-  kind: Block
-  tokens: [33..35]
+  kind: ValueExpr
+  tokens: [29..32]
   data: {
+    op: '>'
+    lhs: 14
+    rhs: 15
   }
 }
 node 17 {
-  kind: Block
-  tokens: [36..38]
+  kind: ValueExpr
+  tokens: [33..34]
   data: {
+    variable: 'y'
   }
 }
 node 18 {
-  kind: IfStmt
-  tokens: [29..38]
+  kind: ValueExpr
+  tokens: [35..36]
   data: {
-    cond_expr: 15
-    then_block: 16
-    else_block: 17
+    literal: '2'
   }
 }
 node 19 {
-  kind: IfStmt
-  tokens: [22..38]
+  kind: AssignStmt
+  tokens: [33..37]
   data: {
-    cond_expr: 11
-    then_block: 12
-    else_if: 18
+    lhs: 17
+    rhs: 18
   }
 }
 node 20 {
   kind: Block
-  tokens: [9..39]
+  tokens: [32..38]
   data: {
     statements: [
-      6,
-      8,
       19
     ]
   }
 }
 node 21 {
+  kind: ValueExpr
+  tokens: [40..41]
+  data: {
+    variable: 'y'
+  }
+}
+node 22 {
+  kind: ValueExpr
+  tokens: [42..43]
+  data: {
+    literal: '3'
+  }
+}
+node 23 {
+  kind: AssignStmt
+  tokens: [40..44]
+  data: {
+    lhs: 21
+    rhs: 22
+  }
+}
+node 24 {
+  kind: Block
+  tokens: [39..45]
+  data: {
+    statements: [
+      23
+    ]
+  }
+}
+node 25 {
+  kind: IfStmt
+  tokens: [28..45]
+  data: {
+    cond_expr: 16
+    then_block: 20
+    else_block: 24
+  }
+}
+node 26 {
+  kind: IfStmt
+  tokens: [17..45]
+  data: {
+    cond_expr: 9
+    then_block: 13
+    else_if: 25
+  }
+}
+node 27 {
+  kind: Block
+  tokens: [9..46]
+  data: {
+    statements: [
+      6,
+      26
+    ]
+  }
+}
+node 28 {
   kind: Function
-  tokens: [0..39]
+  tokens: [0..46]
   data: {
     prototype: 3
-    block: 20
+    block: 27
   }
 }

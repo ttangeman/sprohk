@@ -308,6 +308,13 @@ impl<'a> Ast<'a> {
                     }
                     out.push_str("  }\n");
                 }
+                NodeKind::AssignStmt => {
+                    let assign_stmt = self.node_data.get_assign_stmt(*node);
+                    out.push_str("  data: {\n");
+                    out.push_str(&format!("    lhs: {}\n", assign_stmt.lhs_expr));
+                    out.push_str(&format!("    rhs: {}\n", assign_stmt.rhs_expr));
+                    out.push_str("  }\n");
+                }
 
                 #[allow(unreachable_patterns)]
                 _ => {

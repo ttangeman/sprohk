@@ -1,7 +1,8 @@
 use bumpalo::collections::Vec as BumpVec;
 use sprohk_ast::{
-    Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function, IfStatement, NodeIndex,
-    NodeKind, OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr, VarDecl,
+    AssignStatement, Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function,
+    IfStatement, NodeIndex, NodeKind, OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr,
+    VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -171,8 +172,12 @@ impl Parser {
     /// NOTE: Delimiters (; or ,) are not parsed as part of the expression, so they need
     /// to be manually handled post-invocation which helps assert that they are in semantically
     /// correct positions in a statement or expression list.
-    pub fn parse_value_expr(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
-        self.parse_value_expr_pratt(ast, Precedence::Lowest)
+    pub fn parse_value_expr(
+        &mut self,
+        ast: &mut Ast,
+        terminator: TokenKind,
+    ) -> Result<NodeIndex, ParserError> {
+        self.parse_value_expr_pratt(ast, terminator, Precedence::Lowest)
     }
 
     /// Helper for `parse_value_expr`
@@ -180,6 +185,7 @@ impl Parser {
     fn parse_value_expr_pratt(
         &mut self,
         ast: &mut Ast,
+        terminator: TokenKind,
         min_prec: Precedence,
     ) -> Result<NodeIndex, ParserError> {
         let expr_start = self.at();
@@ -189,7 +195,7 @@ impl Parser {
                 self.advance();
 
                 // Parse rhs expression, using prefix precedence
-                let rhs = self.parse_value_expr_pratt(ast, Precedence::Prefix)?;
+                let rhs = self.parse_value_expr_pratt(ast, terminator, Precedence::Prefix)?;
 
                 // Set lhs to unary op and continue parsing rest of expression
                 Ok(add_value_expr(
@@ -235,8 +241,9 @@ impl Parser {
                 // Consume '('
                 self.advance();
 
-                // Parse inner expression, resetting the precedence
-                let inner = self.parse_value_expr_pratt(ast, Precedence::Lowest)?;
+                // Parse inner expression with ')' terminator, resetting the precedence
+                let inner =
+                    self.parse_value_expr_pratt(ast, TokenKind::RParen, Precedence::Lowest)?;
                 // Expect ')'
                 self.expect(ast, TokenKind::RParen)?;
 
@@ -249,17 +256,9 @@ impl Parser {
         loop {
             let op = match self.peek_token(ast) {
                 Some(token) if token.is_operator() => Ok(OpKind::from_token_kind(token).unwrap()),
-                // Terminate upon seeing a delimiter. Semicolon is considered a statement delimiter,
-                // comma is an expression list delimiter, rparen is a function list terminator and
-                // is not handled as a precedence marker at this stage, and a left brace might be seen
-                // as part of a if statement.
-                Some(TokenKind::Semicolon)
-                | Some(TokenKind::Comma)
-                | Some(TokenKind::RParen)
-                | Some(TokenKind::LBrace) => {
-                    // Do not consume; allow caller to handle semantics.
-                    break;
-                }
+                // Break upon seeing terminator or comma for expression lists (comma requires additional
+                // logic from caller)
+                Some(token) if token == terminator || token == TokenKind::Comma => break,
 
                 Some(token) => Err(ParserError::UnexpectedToken(token)),
                 None => Err(ParserError::UnexpectedEof),
@@ -274,7 +273,7 @@ impl Parser {
                 // Higher precedence: consume operator, parse rhs, and construct bin op
                 self.advance();
 
-                let rhs = self.parse_value_expr_pratt(ast, prec)?;
+                let rhs = self.parse_value_expr_pratt(ast, terminator, prec)?;
                 lhs = add_value_expr(
                     ast,
                     self.span_from(expr_start),
@@ -318,7 +317,7 @@ impl Parser {
 
                 _ => {
                     // Parse parameter
-                    let param_index = self.parse_value_expr(ast)?;
+                    let param_index = self.parse_value_expr(ast, TokenKind::RParen)?;
                     params.push(param_index);
 
                     // Lookahead to see if we should expect comma or terminate parsing on ')'
@@ -370,17 +369,17 @@ impl Parser {
 
     /// Parses an if-statement inside of a block.
     /// Expects the 'if' token to _not_ be consumed by caller.
-    fn parse_if_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+    fn parse_if_stmt(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         let start = self.assert_token(ast, TokenKind::If);
 
         // Parse root if
-        let condition_expr = self.parse_value_expr(ast)?;
+        let condition_expr = self.parse_value_expr(ast, TokenKind::LBrace)?;
         let then_block = self.parse_block(ast)?;
 
         // Check for else block or else-if chain
         let else_node = if self.accept(ast, TokenKind::Else).is_some() {
             match self.peek_token(ast) {
-                Some(TokenKind::If) => Some(self.parse_if_statement(ast)?),
+                Some(TokenKind::If) => Some(self.parse_if_stmt(ast)?),
                 Some(TokenKind::LBrace) => Some(self.parse_block(ast)?),
 
                 Some(TokenKind::Eof) | None => return Err(ParserError::UnexpectedEof),
@@ -402,19 +401,44 @@ impl Parser {
         )
     }
 
+    /// Parses an assignment with a `lhs expr = rhs expr`
+    fn parse_assign_stmt(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
+        let start = self.at();
+
+        // TODO: Handle comma for assignment lists?
+        // Parse `lhs = rhs;`
+        let lhs_expr = self.parse_value_expr(ast, TokenKind::Eq)?;
+        self.expect(ast, TokenKind::Eq)?; // TODO: allow ';'? Is there any reason to
+        let rhs_expr = self.parse_value_expr(ast, TokenKind::Semicolon)?;
+        self.expect(ast, TokenKind::Semicolon)?;
+
+        Ok(
+            ast.add_node_with_data(NodeKind::AssignStmt, self.span_from(start), |node_data| {
+                let assign_stmt = AssignStatement { lhs_expr, rhs_expr };
+                node_data.add_assign_statement(assign_stmt)
+            }),
+        )
+    }
+
     /// Parse a statement -- i.e., an independent line of execution with respect to
     /// a code block. Statements contain some number of expressions that may or may not
     /// yield values or have side effects.
     fn parse_statement(&mut self, ast: &mut Ast) -> Result<NodeIndex, ParserError> {
         while let Some(kind) = ast.get_token_kind(self.at()) {
             match kind {
+                // Variable declaration
                 TokenKind::Var | TokenKind::Const | TokenKind::Let => {
                     let var_decl_index = self.parse_var_decl(ast, kind)?;
                     return Ok(var_decl_index);
                 }
-
+                // Assignment
+                TokenKind::Identifier => {
+                    let assign_stmt_index = self.parse_assign_stmt(ast)?;
+                    return Ok(assign_stmt_index);
+                }
+                // If statement
                 TokenKind::If => {
-                    let if_stmt_index = self.parse_if_statement(ast)?;
+                    let if_stmt_index = self.parse_if_stmt(ast)?;
                     return Ok(if_stmt_index);
                 }
 
@@ -487,7 +511,7 @@ impl Parser {
 
         // Parse the optional initializer
         let assign_expr = if self.accept(ast, TokenKind::Eq).is_some() {
-            let expr = self.parse_value_expr(ast)?;
+            let expr = self.parse_value_expr(ast, TokenKind::Semicolon)?;
             // Go past semicolon
             self.advance();
             Some(expr)

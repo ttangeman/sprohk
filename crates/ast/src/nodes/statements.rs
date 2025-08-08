@@ -9,3 +9,10 @@ pub struct IfStatement {
     // another `IfStatement` chain.
     pub else_node: Option<NodeIndex>,
 }
+
+/// Assignment statement (i.e. lhs = rhs;)
+#[derive(Debug)]
+pub struct AssignStatement {
+    pub lhs_expr: NodeIndex,
+    pub rhs_expr: NodeIndex,
+}

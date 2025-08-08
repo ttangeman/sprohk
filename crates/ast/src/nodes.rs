@@ -27,6 +27,7 @@ pub enum NodeKind {
     FnParameter,
 
     IfStmt,
+    AssignStmt,
 }
 
 #[derive(Clone, Copy, Debug)]
