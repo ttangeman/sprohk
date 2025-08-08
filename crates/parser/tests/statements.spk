@@ -8,4 +8,14 @@ fn foo(x: i32) -> i32 {
     } else {
         y = 3;
     }
+
+    while y < 10 {
+        y = y + 1;
+        continue;
+    }
+
+    loop {
+        y = 42;
+        break;
+    }
 }

@@ -28,6 +28,7 @@ pub enum NodeKind {
 
     IfStmt,
     AssignStmt,
+    LoopStmt,
 }
 
 #[derive(Clone, Copy, Debug)]

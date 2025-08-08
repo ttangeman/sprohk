@@ -28,6 +28,7 @@ pub struct NodeData<'arena> {
 
     if_stmts: BumpVec<'arena, IfStatement>,
     assign_stmts: BumpVec<'arena, AssignStatement>,
+    loop_stmts: BumpVec<'arena, LoopStatement>,
 
     // Statement arena; used to store ranges of indices for blocks.
     statements: BumpVec<'arena, NodeIndex>,
@@ -51,6 +52,7 @@ impl<'arena> NodeData<'arena> {
             fn_params: BumpVec::new_in(arena),
             if_stmts: BumpVec::new_in(arena),
             assign_stmts: BumpVec::new_in(arena),
+            loop_stmts: BumpVec::new_in(arena),
             statements: BumpVec::new_in(arena),
             parameters: BumpVec::new_in(arena),
         }
@@ -67,6 +69,7 @@ impl<'arena> NodeData<'arena> {
         let param_count = function_count * 2; // min 64
         let if_count = function_count; // min 32
         let assign_count = block_count / 2; // min 64
+        let loop_count = function_count / 2; // min 16
 
         self.value_exprs.reserve(expr_count);
         self.blocks.reserve(block_count);
@@ -77,6 +80,7 @@ impl<'arena> NodeData<'arena> {
         self.type_exprs.reserve(var_count / 2);
         self.if_stmts.reserve(if_count);
         self.assign_stmts.reserve(assign_count);
+        self.loop_stmts.reserve(loop_count);
 
         self.statements.reserve(block_count);
         self.parameters.reserve(param_count)
@@ -133,6 +137,12 @@ impl<'arena> NodeData<'arena> {
     pub fn add_assign_statement(&mut self, stmt: AssignStatement) -> DataIndex {
         let index = self.assign_stmts.len() as DataIndex;
         self.assign_stmts.push(stmt);
+        index
+    }
+
+    pub fn add_loop_statement(&mut self, stmt: LoopStatement) -> DataIndex {
+        let index = self.loop_stmts.len() as DataIndex;
+        self.loop_stmts.push(stmt);
         index
     }
 
@@ -210,5 +220,10 @@ impl<'arena> NodeData<'arena> {
     pub fn get_assign_stmt(&self, node: Node) -> &AssignStatement {
         assert_eq!(node.kind, NodeKind::AssignStmt);
         &self.assign_stmts[node.data_index as usize]
+    }
+
+    pub fn get_loop_stmt(&self, node: Node) -> &LoopStatement {
+        assert_eq!(node.kind, NodeKind::LoopStmt);
+        &self.loop_stmts[node.data_index as usize]
     }
 }

@@ -315,6 +315,29 @@ impl<'a> Ast<'a> {
                     out.push_str(&format!("    rhs: {}\n", assign_stmt.rhs_expr));
                     out.push_str("  }\n");
                 }
+                NodeKind::LoopStmt => {
+                    let loop_stmt = self.node_data.get_loop_stmt(*node);
+                    out.push_str("  data: {\n");
+                    match loop_stmt {
+                        LoopStatement::Unbounded { block } => {
+                            out.push_str(&format!("    block: {}\n", block));
+                        }
+                        LoopStatement::While {
+                            condition_expr,
+                            block,
+                        } => {
+                            out.push_str(&format!("    cond_expr: {}\n", condition_expr));
+                            out.push_str(&format!("    block: {}\n", block));
+                        }
+                        LoopStatement::Break => {
+                            out.push_str(&format!("    break\n"));
+                        }
+                        LoopStatement::Continue => {
+                            out.push_str(&format!("    continue\n"));
+                        }
+                    }
+                    out.push_str("  }\n");
+                }
 
                 #[allow(unreachable_patterns)]
                 _ => {

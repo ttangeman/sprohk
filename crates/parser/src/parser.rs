@@ -1,8 +1,8 @@
 use bumpalo::collections::Vec as BumpVec;
 use sprohk_ast::{
     AssignStatement, Ast, BinaryOp, Block, FnCallExpr, FnParameter, FnPrototype, Function,
-    IfStatement, NodeIndex, NodeKind, OpKind, Precedence, TokenIndex, TypeExpr, UnaryOp, ValueExpr,
-    VarDecl,
+    IfStatement, LoopStatement, NodeIndex, NodeKind, OpKind, Precedence, TokenIndex, TypeExpr,
+    UnaryOp, ValueExpr, VarDecl,
 };
 use sprohk_core::Span;
 use sprohk_lexer::TokenKind;
@@ -420,6 +420,51 @@ impl Parser {
         )
     }
 
+    /// Parses a `LoopStatement`, expecting the loop token to not have been consumed.
+    fn parse_loop_stmt(
+        &mut self,
+        ast: &mut Ast,
+        loop_kind: TokenKind,
+    ) -> Result<NodeIndex, ParserError> {
+        debug_assert_eq!(self.peek_token(ast), Some(loop_kind));
+
+        let start = self.at();
+        self.advance();
+
+        let loop_stmt = match loop_kind {
+            TokenKind::Loop => {
+                let block = self.parse_block(ast)?;
+                LoopStatement::Unbounded { block }
+            }
+            TokenKind::While => {
+                let condition_expr = self.parse_value_expr(ast, TokenKind::LBrace)?;
+                let block = self.parse_block(ast)?;
+                LoopStatement::While {
+                    condition_expr,
+                    block,
+                }
+            }
+            TokenKind::For => todo!(),
+
+            TokenKind::Break => {
+                self.expect(ast, TokenKind::Semicolon)?;
+                LoopStatement::Break
+            }
+            TokenKind::Continue => {
+                self.expect(ast, TokenKind::Semicolon)?;
+                LoopStatement::Continue
+            }
+
+            _ => return Err(ParserError::UnexpectedToken(loop_kind)),
+        };
+
+        Ok(
+            ast.add_node_with_data(NodeKind::LoopStmt, self.span_from(start), |node_data| {
+                node_data.add_loop_statement(loop_stmt)
+            }),
+        )
+    }
+
     /// Parse a statement -- i.e., an independent line of execution with respect to
     /// a code block. Statements contain some number of expressions that may or may not
     /// yield values or have side effects.
@@ -440,6 +485,15 @@ impl Parser {
                 TokenKind::If => {
                     let if_stmt_index = self.parse_if_stmt(ast)?;
                     return Ok(if_stmt_index);
+                }
+                // Loop statements
+                TokenKind::Loop
+                | TokenKind::While
+                | TokenKind::For
+                | TokenKind::Break
+                | TokenKind::Continue => {
+                    let loop_stmt = self.parse_loop_stmt(ast, kind)?;
+                    return Ok(loop_stmt);
                 }
 
                 TokenKind::Eof => return Err(ParserError::UnexpectedEof),

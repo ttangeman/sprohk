@@ -213,20 +213,154 @@ node 26 {
   }
 }
 node 27 {
-  kind: Block
-  tokens: [9..46]
+  kind: ValueExpr
+  tokens: [46..47]
   data: {
-    statements: [
-      6,
-      26
-    ]
+    variable: 'y'
   }
 }
 node 28 {
+  kind: ValueExpr
+  tokens: [48..49]
+  data: {
+    literal: '10'
+  }
+}
+node 29 {
+  kind: ValueExpr
+  tokens: [46..49]
+  data: {
+    op: '<'
+    lhs: 27
+    rhs: 28
+  }
+}
+node 30 {
+  kind: ValueExpr
+  tokens: [50..51]
+  data: {
+    variable: 'y'
+  }
+}
+node 31 {
+  kind: ValueExpr
+  tokens: [52..53]
+  data: {
+    variable: 'y'
+  }
+}
+node 32 {
+  kind: ValueExpr
+  tokens: [54..55]
+  data: {
+    literal: '1'
+  }
+}
+node 33 {
+  kind: ValueExpr
+  tokens: [52..55]
+  data: {
+    op: '+'
+    lhs: 31
+    rhs: 32
+  }
+}
+node 34 {
+  kind: AssignStmt
+  tokens: [50..56]
+  data: {
+    lhs: 30
+    rhs: 33
+  }
+}
+node 35 {
+  kind: LoopStmt
+  tokens: [56..58]
+  data: {
+    continue
+  }
+}
+node 36 {
+  kind: Block
+  tokens: [49..59]
+  data: {
+    statements: [
+      34,
+      35
+    ]
+  }
+}
+node 37 {
+  kind: LoopStmt
+  tokens: [45..59]
+  data: {
+    cond_expr: 29
+    block: 36
+  }
+}
+node 38 {
+  kind: ValueExpr
+  tokens: [61..62]
+  data: {
+    variable: 'y'
+  }
+}
+node 39 {
+  kind: ValueExpr
+  tokens: [63..64]
+  data: {
+    literal: '42'
+  }
+}
+node 40 {
+  kind: AssignStmt
+  tokens: [61..65]
+  data: {
+    lhs: 38
+    rhs: 39
+  }
+}
+node 41 {
+  kind: LoopStmt
+  tokens: [65..67]
+  data: {
+    break
+  }
+}
+node 42 {
+  kind: Block
+  tokens: [60..68]
+  data: {
+    statements: [
+      40,
+      41
+    ]
+  }
+}
+node 43 {
+  kind: LoopStmt
+  tokens: [59..68]
+  data: {
+    block: 42
+  }
+}
+node 44 {
+  kind: Block
+  tokens: [9..69]
+  data: {
+    statements: [
+      6,
+      26,
+      37,
+      43
+    ]
+  }
+}
+node 45 {
   kind: Function
-  tokens: [0..46]
+  tokens: [0..69]
   data: {
     prototype: 3
-    block: 27
+    block: 44
   }
 }
